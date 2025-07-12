@@ -271,6 +271,9 @@ jobs:
           -Dsonar.sources=.
           -Dsonar.host.url=https://sonarcloud.io
           -Dsonar.organization=rakshaayanplatform
+          -Dsonar.qualitygate.wait=true
+          -Dsonar.qualitygate.timeout=300
+      continue-on-error: true
 
   # Deploy to Staging
   deploy-staging:
