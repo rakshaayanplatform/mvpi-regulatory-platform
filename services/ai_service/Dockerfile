@@ -20,8 +20,6 @@ RUN apt-get update && apt-get install -y \
     tesseract-ocr-ori \
     tesseract-ocr-pan \
     tesseract-ocr-urd \
-    libmupdf-dev \
-    libmupdf-tools \
     python3-dev \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
