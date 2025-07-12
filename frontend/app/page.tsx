@@ -1,4 +1,3 @@
-import Image from "next/image";
 import ServiceStatus from "@/components/ServiceStatus";
 
 export default function Home() {
@@ -10,7 +9,7 @@ export default function Home() {
             🚀 Rakshaayan Platform
           </h1>
           <p className="text-xl text-gray-600">
-            India's National Medical Device Adverse Event Reporting Platform
+            India&apos;s National Medical Device Adverse Event Reporting Platform
           </p>
         </header>
 
@@ -44,7 +43,7 @@ export default function Home() {
         </main>
 
         <footer className="mt-12 text-center text-gray-500">
-          <p>© 2024 Rakshaayan Platform. Built for India's medical device safety.</p>
+          <p>© 2024 Rakshaayan Platform. Built for India&apos;s medical device safety.</p>
         </footer>
       </div>
     </div>

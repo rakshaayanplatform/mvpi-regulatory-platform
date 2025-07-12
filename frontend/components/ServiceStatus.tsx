@@ -21,6 +21,7 @@ export default function ServiceStatus() {
     { service: 'AI Service', url: API_CONFIG.AI_API_URL, status: 'checking' },
   ]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const checkServices = async () => {
       const updatedServices = await Promise.all(
@@ -32,12 +33,12 @@ export default function ServiceStatus() {
             });
             return {
               ...service,
-              status: response.ok ? 'online' : 'offline',
+              status: (response.ok ? 'online' : 'offline') as ServiceStatus['status'],
             };
-          } catch (error) {
+          } catch {
             return {
               ...service,
-              status: 'offline',
+              status: 'offline' as ServiceStatus['status'],
             };
           }
         })
