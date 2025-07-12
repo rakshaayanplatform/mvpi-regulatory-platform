@@ -30,12 +30,11 @@
 git clone https://github.com/rakshaayanplatform/mvpi-regulatory-platform.git
 cd mvpi-regulatory-platform
 
-# Copy environment files
-cp .env.example .env
-cp services/auth_service/.env.example services/auth_service/.env
-# Repeat for all services
+# Setup environment files (automated)
+./setup-env.sh
 
-# Start all services
+# Edit environment files with your values
+# Then start all services
 docker-compose -f infrastructure/docker-compose.yml up -d
 ```
 
