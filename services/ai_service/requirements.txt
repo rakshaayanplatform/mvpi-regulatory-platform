@@ -31,3 +31,4 @@ opencv-python==4.6.0.66
 librosa==0.10.1
 soundfile==0.12.1
 pydub==0.25.1 
+PyMuPDF==1.23.7 
