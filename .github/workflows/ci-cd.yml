@@ -42,6 +42,24 @@ jobs:
         mypy . --ignore-missing-imports
     
     - name: Run tests
+      env:
+        SECRET_KEY: test-secret-key
+        DEBUG: True
+        ALLOWED_HOSTS: localhost,127.0.0.1
+        POSTGRES_DB: test_db
+        POSTGRES_USER: test_user
+        POSTGRES_PASSWORD: test_password
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
+        JWT_SECRET_KEY: test-jwt-secret
+        ACCESS_TOKEN_LIFETIME: 15
+        REFRESH_TOKEN_LIFETIME: 10080
+        EMAIL_BACKEND: django.core.mail.backends.console.EmailBackend
+        EMAIL_HOST: localhost
+        EMAIL_PORT: 587
+        EMAIL_USE_TLS: True
+        EMAIL_HOST_USER: test@example.com
+        EMAIL_HOST_PASSWORD: test_password
       run: |
         cd services/${{ matrix.service }}
         python manage.py test --verbosity=2
@@ -74,6 +92,15 @@ jobs:
         mypy . --ignore-missing-imports
     
     - name: Run tests
+      env:
+        SECRET_KEY: test-secret-key
+        DEBUG: True
+        ALLOWED_HOSTS: localhost,127.0.0.1
+        POSTGRES_DB: test_db
+        POSTGRES_USER: test_user
+        POSTGRES_PASSWORD: test_password
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
       run: |
         cd services/ai_service
         pytest tests/ -v
