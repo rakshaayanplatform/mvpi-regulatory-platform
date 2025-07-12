@@ -1,0 +1,212 @@
+version: '3.9'
+
+services:
+  # Database
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: rakshaayan
+      POSTGRES_USER: rakshaayan
+      POSTGRES_PASSWORD: secure-password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - rakshaayan-network
+
+  # Redis (for Celery)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - rakshaayan-network
+
+  # Authentication Service
+  auth_service:
+    build: ./services/auth_service
+    ports:
+      - "8001:8000"
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DATABASE_URL=postgresql://rakshaayan:secure-password@db:5432/rakshaayan
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./services/auth_service:/app
+    networks:
+      - rakshaayan-network
+
+  # Patient Service
+  patient_service:
+    build: ./services/patient_service
+    ports:
+      - "8002:8000"
+    depends_on:
+      - db
+      - auth_service
+    environment:
+      - DATABASE_URL=postgresql://rakshaayan:secure-password@db:5432/rakshaayan
+      - AUTH_SERVICE_URL=http://auth_service:8000
+    volumes:
+      - ./services/patient_service:/app
+    networks:
+      - rakshaayan-network
+
+  # Hospital Service
+  hospital_service:
+    build: ./services/hospital_service
+    ports:
+      - "8003:8000"
+    depends_on:
+      - db
+      - auth_service
+    environment:
+      - DATABASE_URL=postgresql://rakshaayan:secure-password@db:5432/rakshaayan
+      - AUTH_SERVICE_URL=http://auth_service:8000
+    volumes:
+      - ./services/hospital_service:/app
+    networks:
+      - rakshaayan-network
+
+  # Manufacturer Service
+  manufacturer_service:
+    build: ./services/manufacturer_service
+    ports:
+      - "8004:8000"
+    depends_on:
+      - db
+      - auth_service
+    environment:
+      - DATABASE_URL=postgresql://rakshaayan:secure-password@db:5432/rakshaayan
+      - AUTH_SERVICE_URL=http://auth_service:8000
+    volumes:
+      - ./services/manufacturer_service:/app
+    networks:
+      - rakshaayan-network
+
+  # Government Service
+  gov_service:
+    build: ./services/gov_service
+    ports:
+      - "8005:8000"
+    depends_on:
+      - db
+      - auth_service
+    environment:
+      - DATABASE_URL=postgresql://rakshaayan:secure-password@db:5432/rakshaayan
+      - AUTH_SERVICE_URL=http://auth_service:8000
+    volumes:
+      - ./services/gov_service:/app
+    networks:
+      - rakshaayan-network
+
+  # Coordinator Service
+  coordinator_service:
+    build: ./services/coordinator_service
+    ports:
+      - "8006:8000"
+    depends_on:
+      - db
+      - auth_service
+    environment:
+      - DATABASE_URL=postgresql://rakshaayan:secure-password@db:5432/rakshaayan
+      - AUTH_SERVICE_URL=http://auth_service:8000
+    volumes:
+      - ./services/coordinator_service:/app
+    networks:
+      - rakshaayan-network
+
+  # Media Service
+  media_service:
+    build: ./services/media_service
+    ports:
+      - "8007:8000"
+    depends_on:
+      - db
+      - auth_service
+    environment:
+      - DATABASE_URL=postgresql://rakshaayan:secure-password@db:5432/rakshaayan
+      - AUTH_SERVICE_URL=http://auth_service:8000
+    volumes:
+      - ./services/media_service:/app
+      - ./uploads:/app/uploads
+    networks:
+      - rakshaayan-network
+
+  # AI Service
+  ai_service:
+    build: ./services/ai_service
+    ports:
+      - "8010:8000"
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DATABASE_URL=postgresql://rakshaayan:secure-password@db:5432/rakshaayan
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./services/ai_service:/app
+      - ./uploads:/app/uploads
+    networks:
+      - rakshaayan-network
+
+  # Frontend
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth_service
+      - patient_service
+      - hospital_service
+      - manufacturer_service
+      - gov_service
+      - coordinator_service
+      - media_service
+      - ai_service
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8001
+      - NEXT_PUBLIC_PATIENT_API_URL=http://localhost:8002
+      - NEXT_PUBLIC_HOSPITAL_API_URL=http://localhost:8003
+      - NEXT_PUBLIC_MANUFACTURER_API_URL=http://localhost:8004
+      - NEXT_PUBLIC_GOV_API_URL=http://localhost:8005
+      - NEXT_PUBLIC_COORDINATOR_API_URL=http://localhost:8006
+      - NEXT_PUBLIC_MEDIA_API_URL=http://localhost:8007
+      - NEXT_PUBLIC_AI_API_URL=http://localhost:8010
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - rakshaayan-network
+
+  # Nginx (Reverse Proxy)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./infrastructure/nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - frontend
+      - auth_service
+      - patient_service
+      - hospital_service
+      - manufacturer_service
+      - gov_service
+      - coordinator_service
+      - media_service
+      - ai_service
+    networks:
+      - rakshaayan-network
+
+volumes:
+  postgres_data:
+
+networks:
+  rakshaayan-network:
+    driver: bridge 
