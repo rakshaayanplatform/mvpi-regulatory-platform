@@ -1,0 +1,292 @@
+name: CI/CD Pipeline - Rakshaayan Platform
+
+on:
+  push:
+    branches: [ main, dev, staging ]
+  pull_request:
+    branches: [ main, dev, staging ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Test Backend Services
+  test-backend:
+    name: Test Backend Services
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [auth_service, patient_service, hospital_service, manufacturer_service, gov_service, coordinator_service, media_service]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        cd services/${{ matrix.service }}
+        pip install -r requirements.txt
+    
+    - name: Run linting
+      run: |
+        cd services/${{ matrix.service }}
+        pip install flake8 black mypy
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        black . --check
+        mypy . --ignore-missing-imports
+    
+    - name: Run tests
+      run: |
+        cd services/${{ matrix.service }}
+        python manage.py test --verbosity=2
+
+  # Test AI Service
+  test-ai-service:
+    name: Test AI Service
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        cd services/ai_service
+        pip install -r requirements.txt
+    
+    - name: Run linting
+      run: |
+        cd services/ai_service
+        pip install flake8 black mypy
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        black . --check
+        mypy . --ignore-missing-imports
+    
+    - name: Run tests
+      run: |
+        cd services/ai_service
+        pytest tests/ -v
+
+  # Test Frontend
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install dependencies
+      run: |
+        cd frontend
+        npm ci
+    
+    - name: Run linting
+      run: |
+        cd frontend
+        npm run lint
+    
+    - name: Run type checking
+      run: |
+        cd frontend
+        npm run type-check
+    
+    - name: Run tests
+      run: |
+        cd frontend
+        npm test -- --coverage
+
+  # Build and Test Docker Images
+  build-docker:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-ai-service, test-frontend]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Build and push auth service
+      uses: docker/build-push-action@v5
+      with:
+        context: ./services/auth_service
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/auth-service:${{ github.sha }}
+    
+    - name: Build and push patient service
+      uses: docker/build-push-action@v5
+      with:
+        context: ./services/patient_service
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/patient-service:${{ github.sha }}
+    
+    - name: Build and push hospital service
+      uses: docker/build-push-action@v5
+      with:
+        context: ./services/hospital_service
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/hospital-service:${{ github.sha }}
+    
+    - name: Build and push manufacturer service
+      uses: docker/build-push-action@v5
+      with:
+        context: ./services/manufacturer_service
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/manufacturer-service:${{ github.sha }}
+    
+    - name: Build and push gov service
+      uses: docker/build-push-action@v5
+      with:
+        context: ./services/gov_service
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/gov-service:${{ github.sha }}
+    
+    - name: Build and push coordinator service
+      uses: docker/build-push-action@v5
+      with:
+        context: ./services/coordinator_service
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/coordinator-service:${{ github.sha }}
+    
+    - name: Build and push media service
+      uses: docker/build-push-action@v5
+      with:
+        context: ./services/media_service
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/media-service:${{ github.sha }}
+    
+    - name: Build and push ai service
+      uses: docker/build-push-action@v5
+      with:
+        context: ./services/ai_service
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/ai-service:${{ github.sha }}
+    
+    - name: Build and push frontend
+      uses: docker/build-push-action@v5
+      with:
+        context: ./frontend
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ github.sha }}
+
+  # Deploy to Staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build-docker
+    if: github.ref == 'refs/heads/staging'
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Deploy to staging environment
+      run: |
+        echo "Deploying to staging environment..."
+        # Add your staging deployment commands here
+        # Example: kubectl apply -f k8s/staging/
+        # Example: docker-compose -f infrastructure/docker-compose.staging.yml up -d
+    
+    - name: Run integration tests
+      run: |
+        echo "Running integration tests against staging..."
+        # Add integration test commands here
+    
+    - name: Notify staging deployment
+      run: |
+        echo "Staging deployment completed successfully!"
+
+  # Deploy to Production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build-docker
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Deploy to production environment
+      run: |
+        echo "Deploying to production environment..."
+        # Add your production deployment commands here
+        # Example: kubectl apply -f k8s/production/
+        # Example: docker-compose -f infrastructure/docker-compose.prod.yml up -d
+    
+    - name: Run smoke tests
+      run: |
+        echo "Running smoke tests against production..."
+        # Add smoke test commands here
+    
+    - name: Notify production deployment
+      run: |
+        echo "Production deployment completed successfully!"
+
+  # Security Scan
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # Code Quality
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} 
