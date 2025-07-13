@@ -118,4 +118,4 @@ class AuditLog(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.user} - {self.action} - {self.created_at}"
+        return f"{self.user} - {self.action} - {self.created_at}" services/auth_service/auth_service/serializers.py services/auth_service/auth_service/views.py

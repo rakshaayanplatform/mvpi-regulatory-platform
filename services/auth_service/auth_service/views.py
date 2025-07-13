@@ -9,8 +9,7 @@ import jwt
 from .models import User, Role, UserRole, OTP, AuditLog
 from .serializers import (
     UserSerializer, UserRegistrationSerializer, UserLoginSerializer,
-    RoleSerializer, UserRoleSerializer, OTPSerializer,
-    AuditLogSerializer, PasswordChangeSerializer,
+    UserRoleSerializer, AuditLogSerializer, PasswordChangeSerializer,
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer
 )
 
@@ -289,4 +288,4 @@ def generate_and_send_otp(user):
     # TODO: Send OTP via SMS/Email
     print(f"OTP for {user.phone_number}: {otp_code}")
 
-    return otp 
+    return otp
