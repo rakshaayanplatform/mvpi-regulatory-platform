@@ -1,7 +1,5 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from django.utils import timezone
-from datetime import datetime, timedelta
 from .models import User, Role, UserRole, OTP, AuditLog
 
 
