@@ -31,9 +31,16 @@ services:
     depends_on:
       - db
       - redis
+    env_file:
+      - ./services/auth_service/.env
     environment:
-      - DATABASE_URL=postgresql://rakshaayan:secure-password@db:5432/rakshaayan
-      - REDIS_URL=redis://redis:6379/0
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=rakshaayan
+      - POSTGRES_USER=rakshaayan
+      - POSTGRES_PASSWORD=secure-password
+      - DEBUG=True
+      - ALLOWED_HOSTS=localhost,127.0.0.1,*.tailscale.net
     volumes:
       - ./services/auth_service:/app
     networks:
@@ -47,8 +54,16 @@ services:
     depends_on:
       - db
       - auth_service
+    env_file:
+      - ./services/patient_service/.env
     environment:
-      - DATABASE_URL=postgresql://rakshaayan:secure-password@db:5432/rakshaayan
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=rakshaayan
+      - POSTGRES_USER=rakshaayan
+      - POSTGRES_PASSWORD=secure-password
+      - DEBUG=True
+      - ALLOWED_HOSTS=localhost,127.0.0.1,*.tailscale.net
       - AUTH_SERVICE_URL=http://auth_service:8000
     volumes:
       - ./services/patient_service:/app
@@ -63,8 +78,16 @@ services:
     depends_on:
       - db
       - auth_service
+    env_file:
+      - ./services/hospital_service/.env
     environment:
-      - DATABASE_URL=postgresql://rakshaayan:secure-password@db:5432/rakshaayan
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=rakshaayan
+      - POSTGRES_USER=rakshaayan
+      - POSTGRES_PASSWORD=secure-password
+      - DEBUG=True
+      - ALLOWED_HOSTS=localhost,127.0.0.1,*.tailscale.net
       - AUTH_SERVICE_URL=http://auth_service:8000
     volumes:
       - ./services/hospital_service:/app
@@ -79,8 +102,16 @@ services:
     depends_on:
       - db
       - auth_service
+    env_file:
+      - ./services/manufacturer_service/.env
     environment:
-      - DATABASE_URL=postgresql://rakshaayan:secure-password@db:5432/rakshaayan
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=rakshaayan
+      - POSTGRES_USER=rakshaayan
+      - POSTGRES_PASSWORD=secure-password
+      - DEBUG=True
+      - ALLOWED_HOSTS=localhost,127.0.0.1,*.tailscale.net
       - AUTH_SERVICE_URL=http://auth_service:8000
     volumes:
       - ./services/manufacturer_service:/app
@@ -95,8 +126,16 @@ services:
     depends_on:
       - db
       - auth_service
+    env_file:
+      - ./services/gov_service/.env
     environment:
-      - DATABASE_URL=postgresql://rakshaayan:secure-password@db:5432/rakshaayan
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=rakshaayan
+      - POSTGRES_USER=rakshaayan
+      - POSTGRES_PASSWORD=secure-password
+      - DEBUG=True
+      - ALLOWED_HOSTS=localhost,127.0.0.1,*.tailscale.net
       - AUTH_SERVICE_URL=http://auth_service:8000
     volumes:
       - ./services/gov_service:/app
@@ -111,8 +150,16 @@ services:
     depends_on:
       - db
       - auth_service
+    env_file:
+      - ./services/coordinator_service/.env
     environment:
-      - DATABASE_URL=postgresql://rakshaayan:secure-password@db:5432/rakshaayan
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=rakshaayan
+      - POSTGRES_USER=rakshaayan
+      - POSTGRES_PASSWORD=secure-password
+      - DEBUG=True
+      - ALLOWED_HOSTS=localhost,127.0.0.1,*.tailscale.net
       - AUTH_SERVICE_URL=http://auth_service:8000
     volumes:
       - ./services/coordinator_service:/app
@@ -127,8 +174,16 @@ services:
     depends_on:
       - db
       - auth_service
+    env_file:
+      - ./services/media_service/.env
     environment:
-      - DATABASE_URL=postgresql://rakshaayan:secure-password@db:5432/rakshaayan
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=rakshaayan
+      - POSTGRES_USER=rakshaayan
+      - POSTGRES_PASSWORD=secure-password
+      - DEBUG=True
+      - ALLOWED_HOSTS=localhost,127.0.0.1,*.tailscale.net
       - AUTH_SERVICE_URL=http://auth_service:8000
     volumes:
       - ./services/media_service:/app
@@ -144,9 +199,16 @@ services:
     depends_on:
       - db
       - redis
+    env_file:
+      - ./services/ai_service/.env
     environment:
-      - DATABASE_URL=postgresql://rakshaayan:secure-password@db:5432/rakshaayan
-      - REDIS_URL=redis://redis:6379/0
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=rakshaayan
+      - POSTGRES_USER=rakshaayan
+      - POSTGRES_PASSWORD=secure-password
+      - DEBUG=True
+      - ALLOWED_HOSTS=localhost,127.0.0.1,*.tailscale.net
     volumes:
       - ./services/ai_service:/app
       - ./uploads:/app/uploads
@@ -167,6 +229,8 @@ services:
       - coordinator_service
       - media_service
       - ai_service
+    env_file:
+      - ./frontend/.env
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8001
       - NEXT_PUBLIC_PATIENT_API_URL=http://localhost:8002

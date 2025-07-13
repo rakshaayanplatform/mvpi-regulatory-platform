@@ -4,10 +4,13 @@ WORKDIR /app
 
 # Install dependencies
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 
 # Copy source code
 COPY . .
+
+# Debug: List files and directories before build
+RUN ls -la && ls -la lib && cat next.config.ts && cat tsconfig.json
 
 # Build application
 RUN npm run build
