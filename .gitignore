@@ -162,9 +162,7 @@ grafana_data/
 *.bak
 *.backup
 
-# Test files
-test_*.py
-*_test.py
+# Test cache only
 tests/__pycache__/
 
 # Documentation build
