@@ -113,7 +113,7 @@ jobs:
               echo "Testing $service..."
               cd "$service"
               pip install -r requirements.txt
-              python -m pytest tests/ -v --tb=short
+              python -m pytest -v --tb=short
               cd ../..
             fi
           done
