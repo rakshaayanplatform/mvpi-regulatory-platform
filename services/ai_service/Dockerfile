@@ -20,6 +20,9 @@ RUN apt-get update && apt-get install -y \
     tesseract-ocr-ori \
     tesseract-ocr-pan \
     tesseract-ocr-urd \
+    python3-dev \
+    build-essential \
+    swig \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies

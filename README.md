@@ -30,47 +30,35 @@
 git clone https://github.com/rakshaayanplatform/mvpi-regulatory-platform.git
 cd mvpi-regulatory-platform
 
-# Copy environment files
-cp .env.example .env
-cp services/auth_service/.env.example services/auth_service/.env
-# Repeat for all services
+# Setup environment files (automated)
+./setup-env.sh
 
-# Start all services
+# Edit environment files with your values
+# Then start all services
 docker-compose -f infrastructure/docker-compose.yml up -d
 ```
 
-### Environment Template (.env)
-```env
-# Database (Tailscale Network)
-POSTGRES_HOST=100.x.x.x         # Vaishali's laptop Tailscale IP
-POSTGRES_PORT=5432
-POSTGRES_DB=rakshaayan
-POSTGRES_USER=rakshaayan
-POSTGRES_PASSWORD=secure-password
+### Environment Setup
 
-# Django Settings
-DEBUG=True
-SECRET_KEY=your-django-secret-key-here
-ALLOWED_HOSTS=localhost,127.0.0.1,*.tailscale.net
+Each service has its own complete `.env` file with all necessary variables:
 
-# JWT Configuration
-ACCESS_TOKEN_LIFETIME=15
-REFRESH_TOKEN_LIFETIME=10080
-JWT_SECRET_KEY=your-jwt-secret
+```bash
+# Setup environment files
+./setup-env.sh
 
-# Email & OTP
-EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USE_TLS=True
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_HOST_PASSWORD=your-app-password
-
-# Service URLs
-MEDIA_SERVICE_URL=http://localhost:8007
-AI_SERVICE_URL=http://localhost:8010
-FRONTEND_URL=http://localhost:3000
+# Edit each service's .env file with your values:
+# - services/auth_service/.env
+# - services/patient_service/.env  
+# - services/ai_service/.env
+# - frontend/.env
 ```
+
+**Key variables to update in each service:**
+- `POSTGRES_HOST` - Your database IP
+- `EMAIL_HOST_USER` - Your email
+- `EMAIL_HOST_PASSWORD` - Your app password
+- `SECRET_KEY` - Unique secret for each service
+- `JWT_SECRET_KEY` - Shared JWT secret
 
 ---
 
@@ -122,6 +110,8 @@ Frontend (Next.js) → API Gateway → Backend Services → Shared Database
 ---
 
 ## 🛠️ Development Setup
+
+> **📖 For detailed step-by-step instructions, see [DEVELOPER_GUIDELINES.md](DEVELOPER_GUIDELINES.md)**
 
 ### 1. GitHub Organization Setup
 ```bash
