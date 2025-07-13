@@ -1,1 +1,1 @@
-# Tests package for auth_service 
+# Auth service tests 

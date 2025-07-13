@@ -1,1 +1,1 @@
-# Tests package for media_service 
+# Media service tests 

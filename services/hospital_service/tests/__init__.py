@@ -1,1 +1,1 @@
-# Tests package for hospital_service 
+# Hospital service tests 
