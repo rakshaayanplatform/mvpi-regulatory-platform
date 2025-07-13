@@ -132,4 +132,4 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     def validate(self, attrs):
         if attrs['new_password'] != attrs['confirm_new_password']:
             raise serializers.ValidationError("New passwords don't match")
-        return attrs
+        return attrs services/auth_service/auth_service/views.py services/auth_service/tests/__init__.py
