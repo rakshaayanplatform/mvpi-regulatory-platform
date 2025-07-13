@@ -1,5 +1,4 @@
-name: CI/CD Pipeline - Rakshaayan Platform
-
+name: ci-cd
 on:
   push:
     branches: [ main, dev, staging ]
