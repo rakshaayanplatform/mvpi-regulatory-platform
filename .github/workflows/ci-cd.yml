@@ -146,7 +146,7 @@ jobs:
   build-docker:
     name: Build Docker Images
     runs-on: ubuntu-latest
-    needs: [test-backend, test-ai-service, test-frontend]
+    needs: [test-frontend]
     permissions:
       contents: read
       packages: write
@@ -165,62 +165,6 @@ jobs:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Build and push auth service
-      uses: docker/build-push-action@v5
-      with:
-        context: ./services/auth_service
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/auth-service:${{ github.sha }}
-    
-    - name: Build and push patient service
-      uses: docker/build-push-action@v5
-      with:
-        context: ./services/patient_service
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/patient-service:${{ github.sha }}
-    
-    - name: Build and push hospital service
-      uses: docker/build-push-action@v5
-      with:
-        context: ./services/hospital_service
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/hospital-service:${{ github.sha }}
-    
-    - name: Build and push manufacturer service
-      uses: docker/build-push-action@v5
-      with:
-        context: ./services/manufacturer_service
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/manufacturer-service:${{ github.sha }}
-    
-    - name: Build and push gov service
-      uses: docker/build-push-action@v5
-      with:
-        context: ./services/gov_service
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/gov-service:${{ github.sha }}
-    
-    - name: Build and push coordinator service
-      uses: docker/build-push-action@v5
-      with:
-        context: ./services/coordinator_service
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/coordinator-service:${{ github.sha }}
-    
-    - name: Build and push media service
-      uses: docker/build-push-action@v5
-      with:
-        context: ./services/media_service
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/media-service:${{ github.sha }}
-    
-    - name: Build and push AI service
-      uses: docker/build-push-action@v5
-      with:
-        context: ./services/ai_service
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/ai-service:${{ github.sha }}
     
     - name: Build and push frontend
       uses: docker/build-push-action@v5
