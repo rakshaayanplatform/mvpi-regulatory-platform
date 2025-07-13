@@ -21,7 +21,6 @@ export default function ServiceStatus() {
     { service: 'AI Service', url: API_CONFIG.AI_API_URL, status: 'checking' },
   ]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const checkServices = async () => {
       const updatedServices = await Promise.all(
@@ -47,7 +46,7 @@ export default function ServiceStatus() {
     };
 
     checkServices();
-  }, []);
+  }, [services]);
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-md">
