@@ -8,18 +8,18 @@ class AdverseEvent(models.Model):
     """Model for storing adverse event reports."""
 
     SEVERITY_CHOICES = [
-        ('mild', 'Mild'),
-        ('moderate', 'Moderate'),
-        ('severe', 'Severe'),
-        ('critical', 'Critical'),
+        ("mild", "Mild"),
+        ("moderate", "Moderate"),
+        ("severe", "Severe"),
+        ("critical", "Critical"),
     ]
 
     STATUS_CHOICES = [
-        ('draft', 'Draft'),
-        ('submitted', 'Submitted'),
-        ('under_review', 'Under Review'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
+        ("draft", "Draft"),
+        ("submitted", "Submitted"),
+        ("under_review", "Under Review"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
     ]
 
     # Basic information
@@ -27,7 +27,7 @@ class AdverseEvent(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     severity = models.CharField(max_length=20, choices=SEVERITY_CHOICES)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
 
     # Device information
     device_name = models.CharField(max_length=200)
@@ -52,14 +52,17 @@ class AdverseEvent(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     reviewed_by = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True,
-        related_name='reviewed_events'
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_events",
     )
     reviewed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        db_table = 'patient_adverse_events'
-        ordering = ['-created_at']
+        db_table = "patient_adverse_events"
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"{self.title} - {self.patient.username}"
@@ -69,10 +72,10 @@ class EventAttachment(models.Model):
     """Model for storing attachments related to adverse events."""
 
     ATTACHMENT_TYPES = [
-        ('image', 'Image'),
-        ('document', 'Document'),
-        ('video', 'Video'),
-        ('audio', 'Audio'),
+        ("image", "Image"),
+        ("document", "Document"),
+        ("video", "Video"),
+        ("audio", "Audio"),
     ]
 
     event = models.ForeignKey(AdverseEvent, on_delete=models.CASCADE)
@@ -83,7 +86,7 @@ class EventAttachment(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = 'patient_event_attachments'
+        db_table = "patient_event_attachments"
 
     def __str__(self):
-        return f"{self.file_name} - {self.event.title}" 
+        return f"{self.file_name} - {self.event.title}"
