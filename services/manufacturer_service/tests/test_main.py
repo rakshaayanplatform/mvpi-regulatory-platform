@@ -1,5 +1,3 @@
-
-
 def test_basic_functionality():
     """Test basic service functionality"""
     assert True
