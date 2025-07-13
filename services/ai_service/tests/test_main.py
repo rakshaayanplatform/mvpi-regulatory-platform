@@ -1,13 +1,10 @@
-import pytest
-
-
 def test_basic_functionality():
     """Test basic service functionality"""
     assert True
 
 
 def test_smoke():
-    """Smoke test for service"""
+    """Smoke test for AI service"""
     assert True
 
 
