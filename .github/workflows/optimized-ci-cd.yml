@@ -1,0 +1,251 @@
+name: Optimized CI/CD Pipeline
+
+on:
+  push:
+    branches: [dev, staging, main]
+  pull_request:
+    branches: [dev, staging, main]
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+
+jobs:
+  # Quick checks first (fail fast)
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache Python dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install frontend dependencies
+        run: cd frontend && npm ci
+
+      - name: Lint frontend
+        run: cd frontend && npm run lint
+
+      - name: Lint backend
+        run: |
+          for service in services/*; do
+            if [ -f "$service/requirements.txt" ]; then
+              cd "$service"
+              pip install flake8 black
+              flake8 . --max-line-length=88 --extend-ignore=E203,W503
+              black --check .
+              cd ../..
+            fi
+          done
+
+  # Tests only for changed services
+  test-changed:
+    name: Test Changed Services
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v39
+        with:
+          files: |
+            frontend/**
+            services/**
+
+      - name: Setup Node.js
+        if: steps.changed-files.outputs.any_changed == 'true' && contains(steps.changed-files.outputs.all_changed_files, 'frontend/')
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Setup Python
+        if: steps.changed-files.outputs.any_changed == 'true' && contains(steps.changed-files.outputs.all_changed_files, 'services/')
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache Python dependencies
+        if: steps.changed-files.outputs.any_changed == 'true' && contains(steps.changed-files.outputs.all_changed_files, 'services/')
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Test frontend
+        if: steps.changed-files.outputs.any_changed == 'true' && contains(steps.changed-files.outputs.all_changed_files, 'frontend/')
+        run: |
+          cd frontend
+          npm ci
+          npm test -- --coverage --watchAll=false
+
+      - name: Test backend services
+        if: steps.changed-files.outputs.any_changed == 'true' && contains(steps.changed-files.outputs.all_changed_files, 'services/')
+        run: |
+          for service in services/*; do
+            if [ -f "$service/requirements.txt" ] && [ -d "$service/tests" ]; then
+              echo "Testing $service..."
+              cd "$service"
+              pip install -r requirements.txt
+              python -m pytest tests/ -v --tb=short
+              cd ../..
+            fi
+          done
+
+  # Security scan (only on PRs, skip for docs)
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    if: |
+      github.event_name == 'pull_request' &&
+      !contains(github.event.pull_request.title, '[skip security]') &&
+      !contains(github.event.pull_request.title, '[docs]')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Build Docker images (only on staging/main)
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [lint, test-changed]
+    if: github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build frontend
+        run: |
+          docker build -t rakshaayan-frontend:latest ./frontend
+          docker build -t rakshaayan-frontend:${{ github.sha }} ./frontend
+
+      - name: Build backend services
+        run: |
+          for service in services/*; do
+            if [ -f "$service/Dockerfile" ]; then
+              service_name=$(basename "$service")
+              docker build -t "rakshaayan-$service_name:latest" "./$service"
+              docker build -t "rakshaayan-$service_name:${{ github.sha }}" "./$service"
+            fi
+          done
+
+  # Deploy to staging (only on staging branch)
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [build]
+    if: github.ref == 'refs/heads/staging' && github.event_name == 'push'
+    environment: staging
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to staging environment
+        run: |
+          echo "Deploying to staging environment..."
+          # Add your staging deployment commands here
+          # Example: docker-compose -f infrastructure/docker-compose.staging.yml up -d
+
+      - name: Health check
+        run: |
+          echo "Running health checks..."
+          # Add health check commands here
+          # Example: curl -f http://staging.rakshaayan.in/health
+
+  # Deploy to production (only on main branch)
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to production environment
+        run: |
+          echo "Deploying to production environment..."
+          # Add your production deployment commands here
+          # Example: docker-compose -f infrastructure/docker-compose.prod.yml up -d
+
+      - name: Health check
+        run: |
+          echo "Running health checks..."
+          # Add health check commands here
+          # Example: curl -f https://rakshaayan.in/health
+
+      - name: Notify team
+        if: always()
+        run: |
+          echo "Deployment completed for commit ${{ github.sha }}"
+          # Add notification logic here (Slack, email, etc.)
+
+  # Performance monitoring (only on main)
+  performance-check:
+    name: Performance Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [deploy-production]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run performance tests
+        run: |
+          echo "Running performance tests..."
+          # Add performance test commands here
+          # Example: npm run test:performance
+
+      - name: Generate performance report
+        run: |
+          echo "Generating performance report..."
+          # Add report generation logic here 
