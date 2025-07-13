@@ -74,6 +74,14 @@ jobs:
           files: |
             frontend/**
             services/**
+            shared_libs/**
+            infrastructure/**
+
+      - name: Show changed files
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo "Changed files:"
+          echo "${{ steps.changed-files.outputs.all_changed_files }}"
 
       - name: Setup Node.js
         if: steps.changed-files.outputs.any_changed == 'true' && contains(steps.changed-files.outputs.all_changed_files, 'frontend/')
@@ -84,13 +92,13 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Setup Python
-        if: steps.changed-files.outputs.any_changed == 'true' && contains(steps.changed-files.outputs.all_changed_files, 'services/')
+        if: steps.changed-files.outputs.any_changed == 'true' && (contains(steps.changed-files.outputs.all_changed_files, 'services/') || contains(steps.changed-files.outputs.all_changed_files, 'shared_libs/'))
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Cache Python dependencies
-        if: steps.changed-files.outputs.any_changed == 'true' && contains(steps.changed-files.outputs.all_changed_files, 'services/')
+        if: steps.changed-files.outputs.any_changed == 'true' && (contains(steps.changed-files.outputs.all_changed_files, 'services/') || contains(steps.changed-files.outputs.all_changed_files, 'shared_libs/'))
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
@@ -101,22 +109,44 @@ jobs:
       - name: Test frontend
         if: steps.changed-files.outputs.any_changed == 'true' && contains(steps.changed-files.outputs.all_changed_files, 'frontend/')
         run: |
+          echo "Testing frontend (has changes)..."
           cd frontend
           npm ci
           npm test -- --coverage --watchAll=false
 
       - name: Test backend services
-        if: steps.changed-files.outputs.any_changed == 'true' && contains(steps.changed-files.outputs.all_changed_files, 'services/')
+        if: steps.changed-files.outputs.any_changed == 'true' && (contains(steps.changed-files.outputs.all_changed_files, 'services/') || contains(steps.changed-files.outputs.all_changed_files, 'shared_libs/'))
         run: |
-          for service in services/*; do
-            if [ -f "$service/requirements.txt" ] && [ -d "$service/tests" ]; then
-              echo "Testing $service..."
-              cd "$service"
-              pip install -r requirements.txt
-              python3 -m pytest tests/ -v --tb=short
-              cd ../..
-            fi
-          done
+          # If shared_libs changed, test all services that depend on it
+          if echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -q "shared_libs/"; then
+            echo "Shared libraries changed - testing all services..."
+            for service in services/*; do
+              if [ -f "$service/requirements.txt" ] && [ -d "$service/tests" ]; then
+                echo "Testing $service (shared libs dependency)..."
+                cd "$service"
+                pip install -r requirements.txt
+                python3 -m pytest tests/ -v --tb=short
+                cd ../..
+              fi
+            done
+          else
+            # Only test services that have changes
+            for service in services/*; do
+              if [ -f "$service/requirements.txt" ] && [ -d "$service/tests" ]; then
+                service_name=$(basename "$service")
+                # Check if this specific service has changes
+                if echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -q "services/$service_name/"; then
+                  echo "Testing $service (has changes)..."
+                  cd "$service"
+                  pip install -r requirements.txt
+                  python3 -m pytest tests/ -v --tb=short
+                  cd ../..
+                else
+                  echo "Skipping $service (no changes)..."
+                fi
+              fi
+            done
+          fi
 
   # Security scan (only on PRs, skip for docs)
   security-scan:
