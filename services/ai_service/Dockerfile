@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies for ML
+# Install system dependencies for ML in a single layer
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
@@ -23,15 +23,19 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     build-essential \
     swig \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+# Copy requirements first for better Docker layer caching
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Download spaCy models
-RUN python -m spacy download en_core_web_sm
-RUN python -m spacy download xx_ent_wiki_sm
+# Install Python dependencies with optimized flags and pre-built wheels
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir --prefer-binary -r requirements.txt
+
+# Download spaCy models in a separate layer for better caching
+RUN python -m spacy download en_core_web_sm && \
+    python -m spacy download xx_ent_wiki_sm
 
 # Copy application code
 COPY . .
