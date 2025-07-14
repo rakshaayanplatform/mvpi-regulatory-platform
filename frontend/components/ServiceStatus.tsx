@@ -32,12 +32,12 @@ export default function ServiceStatus() {
             });
             return {
               ...service,
-              status: response.ok ? 'online' : 'offline',
+              status: (response.ok ? 'online' : 'offline') as ServiceStatus['status'],
             };
-          } catch (error) {
+          } catch {
             return {
               ...service,
-              status: 'offline',
+              status: 'offline' as ServiceStatus['status'],
             };
           }
         })
@@ -46,7 +46,7 @@ export default function ServiceStatus() {
     };
 
     checkServices();
-  }, []);
+  }, [services]);
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-md">

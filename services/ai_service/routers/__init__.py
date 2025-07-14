@@ -3,9 +3,4 @@
 
 from . import speech_to_text, ocr, nlp, medical_terms
 
-__all__ = [
-    'speech_to_text',
-    'ocr', 
-    'nlp',
-    'medical_terms'
-] 
+__all__ = ["speech_to_text", "ocr", "nlp", "medical_terms"]
