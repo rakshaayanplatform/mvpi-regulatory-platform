@@ -302,7 +302,7 @@ jobs:
   build-backend:
     name: 🐳 Build Backend Docker Images
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 2
     needs: [detect-changes, lint-backend, test-backend]
     # Conditional execution logic:
     # - dev branch: Only if backend or shared_libs changed
