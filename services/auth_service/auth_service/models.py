@@ -5,105 +5,102 @@ from django.utils import timezone
 
 class User(AbstractUser):
     """Custom User model for Rakshaayan platform."""
-    
+
     # User types
     USER_TYPE_CHOICES = [
-        ('patient', 'Patient'),
-        ('hospital', 'Hospital Staff'),
-        ('manufacturer', 'Manufacturer'),
-        ('government', 'Government Official'),
-        ('coordinator', 'MDMC Coordinator'),
-        ('admin', 'System Administrator'),
+        ("patient", "Patient"),
+        ("hospital", "Hospital Staff"),
+        ("manufacturer", "Manufacturer"),
+        ("government", "Government Official"),
+        ("coordinator", "MDMC Coordinator"),
+        ("admin", "System Administrator"),
     ]
-    
+
     # Additional fields
     user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES)
     phone_number = models.CharField(max_length=15, unique=True)
     is_phone_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     # Profile fields
     organization_name = models.CharField(max_length=200, blank=True)
     designation = models.CharField(max_length=100, blank=True)
     address = models.TextField(blank=True)
-    
+
     class Meta:
-        db_table = 'auth_users'
-        verbose_name = 'User'
-        verbose_name_plural = 'Users'
-    
+        db_table = "auth_users"
+        verbose_name = "User"
+        verbose_name_plural = "Users"
+
     def __str__(self):
         return f"{self.username} ({self.get_user_type_display()})"
 
 
 class Role(models.Model):
     """Role-based permissions for different user types."""
-    
+
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
     permissions = models.JSONField(default=list)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
-        db_table = 'auth_roles'
-    
+        db_table = "auth_roles"
+
     def __str__(self):
         return self.name
 
 
 class UserRole(models.Model):
     """Many-to-many relationship between User and Role."""
-    
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
     assigned_at = models.DateTimeField(auto_now_add=True)
     assigned_by = models.ForeignKey(
-        User, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        related_name='role_assignments'
+        User, on_delete=models.SET_NULL, null=True, related_name="role_assignments"
     )
-    
+
     class Meta:
-        db_table = 'auth_user_roles'
-        unique_together = ('user', 'role')
-    
+        db_table = "auth_user_roles"
+        unique_together = ("user", "role")
+
     def __str__(self):
         return f"{self.user.username} - {self.role.name}"
 
 
 class OTP(models.Model):
     """One-Time Password for phone verification."""
-    
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     otp_code = models.CharField(max_length=6)
     is_used = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
-    
+
     class Meta:
-        db_table = 'auth_otps'
-    
+        db_table = "auth_otps"
+
     def is_expired(self):
         return timezone.now() > self.expires_at
-    
+
     def __str__(self):
         return f"OTP for {self.user.username}"
 
 
 class AuditLog(models.Model):
     """Audit trail for user actions."""
-    
+
     ACTION_CHOICES = [
-        ('login', 'Login'),
-        ('logout', 'Logout'),
-        ('create', 'Create'),
-        ('update', 'Update'),
-        ('delete', 'Delete'),
-        ('view', 'View'),
+        ("login", "Login"),
+        ("logout", "Logout"),
+        ("create", "Create"),
+        ("update", "Update"),
+        ("delete", "Delete"),
+        ("view", "View"),
     ]
-    
+
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     action = models.CharField(max_length=20, choices=ACTION_CHOICES)
     resource_type = models.CharField(max_length=100)
@@ -112,10 +109,10 @@ class AuditLog(models.Model):
     ip_address = models.GenericIPAddressField()
     user_agent = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
-        db_table = 'auth_audit_logs'
-        ordering = ['-created_at']
-    
+        db_table = "auth_audit_logs"
+        ordering = ["-created_at"]
+
     def __str__(self):
-        return f"{self.user} - {self.action} - {self.created_at}" 
+        return f"{self.user} - {self.action} - {self.created_at}"

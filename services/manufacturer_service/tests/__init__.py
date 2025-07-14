@@ -1,1 +1,1 @@
-# Tests package for manufacturer_service 
+# Manufacturer service tests
