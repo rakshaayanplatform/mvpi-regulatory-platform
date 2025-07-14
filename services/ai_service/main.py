@@ -1,10 +1,8 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import uvicorn
 import logging
-from typing import Optional, List
-import os
 from datetime import datetime
 
 # Import routers
@@ -20,7 +18,7 @@ app = FastAPI(
     description="AI-powered medical device adverse event reporting platform",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
 )
 
 # Add CORS middleware
@@ -33,10 +31,14 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(speech_to_text.router, prefix="/api/v1/speech", tags=["Speech-to-Text"])
+app.include_router(
+    speech_to_text.router, prefix="/api/v1/speech", tags=["Speech-to-Text"]
+)
 app.include_router(ocr.router, prefix="/api/v1/ocr", tags=["OCR"])
 app.include_router(nlp.router, prefix="/api/v1/nlp", tags=["NLP"])
-app.include_router(medical_terms.router, prefix="/api/v1/medical", tags=["Medical Terms"])
+app.include_router(
+    medical_terms.router, prefix="/api/v1/medical", tags=["Medical Terms"]
+)
 
 
 @app.get("/")
@@ -53,8 +55,8 @@ async def root():
             "speech_to_text": "/api/v1/speech",
             "ocr": "/api/v1/ocr",
             "nlp": "/api/v1/nlp",
-            "medical_terms": "/api/v1/medical"
-        }
+            "medical_terms": "/api/v1/medical",
+        },
     }
 
 
@@ -66,11 +68,7 @@ async def health_check():
         return {
             "status": "healthy",
             "timestamp": datetime.utcnow().isoformat(),
-            "models": {
-                "speech_to_text": "loaded",
-                "ocr": "loaded",
-                "nlp": "loaded"
-            }
+            "models": {"speech_to_text": "loaded", "ocr": "loaded", "nlp": "loaded"},
         }
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
@@ -81,17 +79,8 @@ async def health_check():
 async def global_exception_handler(request, exc):
     """Global exception handler."""
     logger.error(f"Unhandled exception: {str(exc)}")
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error"}
-    )
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 
 if __name__ == "__main__":
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
-    ) 
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")

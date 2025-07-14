@@ -1,1 +1,1 @@
-# Tests package for coordinator_service 
+# Coordinator service tests
