@@ -1,308 +1,288 @@
-from rest_framework import status, generics, permissions
+from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import login, logout
 from django.utils import timezone
-from datetime import timedelta
-import random
-import string
+from datetime import datetime, timedelta
+import jwt
 from .models import User, Role, UserRole, OTP, AuditLog
 from .serializers import (
-    UserSerializer, UserRegistrationSerializer, LoginSerializer,
-    RoleSerializer, UserRoleSerializer, OTPSerializer,
-    OTPRequestSerializer, OTPVerifySerializer, PasswordResetSerializer,
-    AuditLogSerializer
+    UserSerializer,
+    UserRegistrationSerializer,
+    UserLoginSerializer,
+    UserRoleSerializer,
+    AuditLogSerializer,
+    PasswordChangeSerializer,
+    PasswordResetRequestSerializer,
+    PasswordResetConfirmSerializer,
 )
 
 
-class RegisterView(APIView):
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def register(request):
     """User registration endpoint."""
-    
-    permission_classes = [permissions.AllowAny]
-    
-    def post(self, request):
-        serializer = UserRegistrationSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            
-            # Create audit log
-            AuditLog.objects.create(
-                user=user,
-                action='create',
-                resource_type='user',
-                resource_id=str(user.id),
-                ip_address=request.META.get('REMOTE_ADDR', ''),
-                user_agent=request.META.get('HTTP_USER_AGENT', ''),
-                details={'registration_method': 'api'}
-            )
-            
-            return Response({
-                'message': 'User registered successfully.',
-                'user': UserSerializer(user).data
-            }, status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    serializer = UserRegistrationSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save()
+        return Response(
+            {
+                "message": "User registered successfully",
+                "user": UserSerializer(user).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class LoginView(APIView):
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def login_view(request):
     """User login endpoint."""
-    
-    permission_classes = [permissions.AllowAny]
-    
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.validated_data['user']
-            
-            # Generate JWT tokens
-            refresh = RefreshToken.for_user(user)
-            access_token = refresh.access_token
-            
-            # Create audit log
-            AuditLog.objects.create(
-                user=user,
-                action='login',
-                resource_type='user',
-                resource_id=str(user.id),
-                ip_address=request.META.get('REMOTE_ADDR', ''),
-                user_agent=request.META.get('HTTP_USER_AGENT', ''),
-                details={'login_method': 'api'}
-            )
-            
-            return Response({
-                'access_token': str(access_token),
-                'refresh_token': str(refresh),
-                'user': UserSerializer(user).data
-            }, status=status.HTTP_200_OK)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    serializer = UserLoginSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.validated_data["user"]
+        login(request, user)
+
+        # Generate JWT tokens
+        access_token = generate_access_token(user)
+        refresh_token = generate_refresh_token(user)
+
+        return Response(
+            {
+                "message": "Login successful",
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "user": UserSerializer(user).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class LogoutView(APIView):
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def logout_view(request):
     """User logout endpoint."""
-    
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def post(self, request):
-        try:
-            refresh_token = request.data.get('refresh_token')
-            if refresh_token:
-                token = RefreshToken(refresh_token)
-                token.blacklist()
-            
-            # Create audit log
-            AuditLog.objects.create(
-                user=request.user,
-                action='logout',
-                resource_type='user',
-                resource_id=str(request.user.id),
-                ip_address=request.META.get('REMOTE_ADDR', ''),
-                user_agent=request.META.get('HTTP_USER_AGENT', ''),
-                details={'logout_method': 'api'}
+    logout(request)
+    return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def profile(request):
+    """Get user profile."""
+    serializer = UserSerializer(request.user)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(["PUT"])
+@permission_classes([IsAuthenticated])
+def update_profile(request):
+    """Update user profile."""
+    serializer = UserSerializer(request.user, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(
+            {"message": "Profile updated successfully", "user": serializer.data},
+            status=status.HTTP_200_OK,
+        )
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    """Change user password."""
+    serializer = PasswordChangeSerializer(data=request.data)
+    if serializer.is_valid():
+        user = request.user
+        if user.check_password(serializer.validated_data["old_password"]):
+            user.set_password(serializer.validated_data["new_password"])
+            user.save()
+            return Response(
+                {"message": "Password changed successfully"}, status=status.HTTP_200_OK
             )
-            
-            return Response({'message': 'Logged out successfully.'}, status=status.HTTP_200_OK)
-        
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(
+                {"error": "Invalid old password"}, status=status.HTTP_400_BAD_REQUEST
+            )
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class OTPRequestView(APIView):
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def request_otp(request):
     """Request OTP for phone verification."""
-    
-    permission_classes = [permissions.AllowAny]
-    
-    def post(self, request):
-        serializer = OTPRequestSerializer(data=request.data)
-        if serializer.is_valid():
-            phone_number = serializer.validated_data['phone_number']
+    serializer = PasswordResetRequestSerializer(data=request.data)
+    if serializer.is_valid():
+        phone_number = serializer.validated_data["phone_number"]
+        try:
             user = User.objects.get(phone_number=phone_number)
-            
-            # Generate OTP
-            otp_code = ''.join(random.choices(string.digits, k=6))
-            expires_at = timezone.now() + timedelta(minutes=10)
-            
-            # Create OTP record
-            OTP.objects.create(
-                user=user,
-                otp_code=otp_code,
-                expires_at=expires_at
+            # Generate and send OTP
+            generate_and_send_otp(user)
+            return Response(
+                {"message": "OTP sent successfully"}, status=status.HTTP_200_OK
             )
-            
-            # TODO: Send OTP via SMS/WhatsApp
-            # For development, we'll return the OTP in response
-            return Response({
-                'message': 'OTP sent successfully.',
-                'otp_code': otp_code  # Remove this in production
-            }, status=status.HTTP_200_OK)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except User.DoesNotExist:
+            return Response(
+                {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class OTPVerifyView(APIView):
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def verify_otp(request):
     """Verify OTP for phone verification."""
-    
-    permission_classes = [permissions.AllowAny]
-    
-    def post(self, request):
-        serializer = OTPVerifySerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.validated_data['user']
-            otp = serializer.validated_data['otp']
-            
-            # Mark OTP as used
-            otp.is_used = True
-            otp.save()
-            
-            # Mark user as phone verified
+    phone_number = request.data.get("phone_number")
+    otp_code = request.data.get("otp_code")
+
+    if not phone_number or not otp_code:
+        return Response(
+            {"error": "Phone number and OTP required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        user = User.objects.get(phone_number=phone_number)
+        otp = OTP.objects.filter(
+            user=user, otp_code=otp_code, is_used=False, expires_at__gt=timezone.now()
+        ).first()
+
+        if otp:
             user.is_phone_verified = True
             user.save()
-            
-            # Create audit log
-            AuditLog.objects.create(
-                user=user,
-                action='update',
-                resource_type='user',
-                resource_id=str(user.id),
-                ip_address=request.META.get('REMOTE_ADDR', ''),
-                user_agent=request.META.get('HTTP_USER_AGENT', ''),
-                details={'verification_type': 'phone_otp'}
+            otp.is_used = True
+            otp.save()
+            return Response(
+                {"message": "Phone verified successfully"}, status=status.HTTP_200_OK
             )
-            
-            return Response({
-                'message': 'Phone number verified successfully.'
-            }, status=status.HTTP_200_OK)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(
+                {"error": "Invalid or expired OTP"}, status=status.HTTP_400_BAD_REQUEST
+            )
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
-class PasswordResetView(APIView):
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def reset_password(request):
     """Reset password using OTP."""
-    
-    permission_classes = [permissions.AllowAny]
-    
-    def post(self, request):
-        serializer = PasswordResetSerializer(data=request.data)
-        if serializer.is_valid():
-            phone_number = serializer.validated_data['phone_number']
-            otp_code = serializer.validated_data['otp_code']
-            new_password = serializer.validated_data['new_password']
-            
-            try:
-                user = User.objects.get(phone_number=phone_number)
-                otp = OTP.objects.filter(
-                    user=user,
-                    otp_code=otp_code,
-                    is_used=False,
-                    expires_at__gt=timezone.now()
-                ).first()
-                
-                if not otp:
-                    return Response({
-                        'error': 'Invalid or expired OTP.'
-                    }, status=status.HTTP_400_BAD_REQUEST)
-                
-                # Update password
+    serializer = PasswordResetConfirmSerializer(data=request.data)
+    if serializer.is_valid():
+        phone_number = request.data.get("phone_number")
+        otp_code = serializer.validated_data["otp_code"]
+        new_password = serializer.validated_data["new_password"]
+
+        try:
+            user = User.objects.get(phone_number=phone_number)
+            otp = OTP.objects.filter(
+                user=user,
+                otp_code=otp_code,
+                is_used=False,
+                expires_at__gt=timezone.now(),
+            ).first()
+
+            if otp:
                 user.set_password(new_password)
                 user.save()
-                
-                # Mark OTP as used
                 otp.is_used = True
                 otp.save()
-                
-                # Create audit log
-                AuditLog.objects.create(
-                    user=user,
-                    action='update',
-                    resource_type='user',
-                    resource_id=str(user.id),
-                    ip_address=request.META.get('REMOTE_ADDR', ''),
-                    user_agent=request.META.get('HTTP_USER_AGENT', ''),
-                    details={'reset_method': 'otp'}
+                return Response(
+                    {"message": "Password reset successfully"},
+                    status=status.HTTP_200_OK,
                 )
-                
-                return Response({
-                    'message': 'Password reset successfully.'
-                }, status=status.HTTP_200_OK)
-            
-            except User.DoesNotExist:
-                return Response({
-                    'error': 'User not found.'
-                }, status=status.HTTP_404_NOT_FOUND)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class UserProfileView(APIView):
-    """Get and update user profile."""
-    
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def get(self, request):
-        serializer = UserSerializer(request.user)
-        return Response(serializer.data)
-    
-    def put(self, request):
-        serializer = UserSerializer(request.user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class RoleListView(generics.ListCreateAPIView):
-    """List and create roles."""
-    
-    queryset = Role.objects.all()
-    serializer_class = RoleSerializer
-    permission_classes = [permissions.IsAdminUser]
-
-
-class UserRoleView(APIView):
-    """Assign roles to users."""
-    
-    permission_classes = [permissions.IsAdminUser]
-    
-    def post(self, request):
-        user_id = request.data.get('user_id')
-        role_id = request.data.get('role_id')
-        
-        try:
-            user = User.objects.get(id=user_id)
-            role = Role.objects.get(id=role_id)
-            
-            user_role, created = UserRole.objects.get_or_create(
-                user=user,
-                role=role,
-                defaults={'assigned_by': request.user}
+            else:
+                return Response(
+                    {"error": "Invalid or expired OTP"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        except User.DoesNotExist:
+            return Response(
+                {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
             )
-            
-            if not created:
-                return Response({
-                    'message': 'Role already assigned to user.'
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            return Response({
-                'message': 'Role assigned successfully.'
-            }, status=status.HTTP_201_CREATED)
-        
-        except (User.DoesNotExist, Role.DoesNotExist):
-            return Response({
-                'error': 'User or role not found.'
-            }, status=status.HTTP_404_NOT_FOUND)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AuditLogView(generics.ListAPIView):
-    """List audit logs."""
-    
-    queryset = AuditLog.objects.all()
-    serializer_class = AuditLogSerializer
-    permission_classes = [permissions.IsAdminUser]
-    
-    def get_queryset(self):
-        queryset = AuditLog.objects.all()
-        user_id = self.request.query_params.get('user_id', None)
-        if user_id:
-            queryset = queryset.filter(user_id=user_id)
-        return queryset 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def user_roles(request):
+    """Get user roles."""
+    user_roles = UserRole.objects.filter(user=request.user)
+    serializer = UserRoleSerializer(user_roles, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def assign_role(request):
+    """Assign role to user."""
+    user_id = request.data.get("user_id")
+    role_id = request.data.get("role_id")
+
+    if not user_id or not role_id:
+        return Response(
+            {"error": "User ID and Role ID required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        user = User.objects.get(id=user_id)
+        role = Role.objects.get(id=role_id)
+        user_role = UserRole.objects.create(
+            user=user, role=role, assigned_by=request.user
+        )
+        serializer = UserRoleSerializer(user_role)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    except (User.DoesNotExist, Role.DoesNotExist):
+        return Response(
+            {"error": "User or Role not found"}, status=status.HTTP_404_NOT_FOUND
+        )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def audit_logs(request):
+    """Get audit logs for user."""
+    logs = AuditLog.objects.filter(user=request.user).order_by("-created_at")
+    serializer = AuditLogSerializer(logs, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# Helper functions
+def generate_access_token(user):
+    """Generate JWT access token."""
+    payload = {
+        "user_id": user.id,
+        "username": user.username,
+        "exp": datetime.utcnow() + timedelta(minutes=60),
+    }
+    return jwt.encode(payload, "your-secret-key", algorithm="HS256")
+
+
+def generate_refresh_token(user):
+    """Generate JWT refresh token."""
+    payload = {"user_id": user.id, "exp": datetime.utcnow() + timedelta(days=7)}
+    return jwt.encode(payload, "your-secret-key", algorithm="HS256")
+
+
+def generate_and_send_otp(user):
+    """Generate and send OTP to user."""
+    import random
+
+    otp_code = str(random.randint(100000, 999999))
+    expires_at = timezone.now() + timedelta(minutes=10)
+
+    # Delete existing unused OTPs
+    OTP.objects.filter(user=user, is_used=False).delete()
+
+    # Create new OTP
+    otp = OTP.objects.create(user=user, otp_code=otp_code, expires_at=expires_at)
+
+    # TODO: Send OTP via SMS/Email
+    print(f"OTP for {user.phone_number}: {otp_code}")
+
+    return otp
