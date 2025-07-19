@@ -1,1 +1,0 @@
-# Coordinator service tests
