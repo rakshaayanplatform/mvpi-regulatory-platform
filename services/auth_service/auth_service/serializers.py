@@ -1,156 +1,130 @@
 from rest_framework import serializers
-from django.contrib.auth import authenticate
-from .models import User, Role, UserRole, OTP, AuditLog
+from django.contrib.auth import get_user_model
+from .models import Role, UserRole, OTP, AuditLog
+import re
 
+User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
-    """Serializer for User model."""
-
     class Meta:
         model = User
-        fields = [
-            "id",
-            "username",
-            "email",
-            "first_name",
-            "last_name",
-            "user_type",
-            "phone_number",
-            "is_phone_verified",
-            "organization_name",
-            "designation",
-            "address",
-            "created_at",
-            "updated_at",
-        ]
-        read_only_fields = ["id", "created_at", "updated_at"]
-
+        exclude = ["password"]
+        read_only_fields = ("is_phone_verified", "created_at", "updated_at")
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    """Serializer for user registration."""
-
-    password = serializers.CharField(write_only=True)
-    confirm_password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, min_length=8)
 
     class Meta:
         model = User
-        fields = [
-            "username",
-            "email",
-            "password",
-            "confirm_password",
-            "first_name",
-            "last_name",
-            "user_type",
-            "phone_number",
-            "organization_name",
-            "designation",
-            "address",
-        ]
+        fields = ("username", "email", "phone_number", "password", "user_type")
 
-    def validate(self, attrs):
-        if attrs["password"] != attrs["confirm_password"]:
-            raise serializers.ValidationError("Passwords don't match")
-        return attrs
+    def validate_username(self, value):
+        if not re.match(r'^[\w.@+-]+$', value):
+            raise serializers.ValidationError("Invalid username format.")
+        return value
+
+    def validate_email(self, value):
+        if not re.match(r"^[^@]+@[^@]+\.[^@]+$", value):
+            raise serializers.ValidationError("Invalid email format.")
+        return value.lower()
+
+    def validate_phone_number(self, value):
+        if not re.match(r"^\+?\d{10,15}$", value):
+            raise serializers.ValidationError("Invalid phone number format.")
+        return value
+
+    def validate_password(self, value):
+        if len(value) < 8:
+            raise serializers.ValidationError("Password must be at least 8 characters.")
+        if not re.search(r"[A-Z]", value):
+            raise serializers.ValidationError("Password must contain an uppercase letter.")
+        if not re.search(r"[a-z]", value):
+            raise serializers.ValidationError("Password must contain a lowercase letter.")
+        if not re.search(r"\d", value):
+            raise serializers.ValidationError("Password must contain a digit.")
+        if not re.search(r"[^A-Za-z0-9]", value):
+            raise serializers.ValidationError("Password must contain a special character.")
+        return value
 
     def create(self, validated_data):
-        validated_data.pop("confirm_password")
-        user = User.objects.create_user(**validated_data)
+        user = User.objects.create_user(
+            username=validated_data["username"],
+            email=validated_data["email"],
+            phone_number=validated_data["phone_number"],
+            user_type=validated_data["user_type"],
+            password=validated_data["password"],
+        )
         return user
 
-
 class UserLoginSerializer(serializers.Serializer):
-    """Serializer for user login."""
-
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
 
-    def validate(self, attrs):
-        user = authenticate(username=attrs["username"], password=attrs["password"])
-        if not user:
-            raise serializers.ValidationError("Invalid credentials")
-        attrs["user"] = user
-        return attrs
-
-
-class RoleSerializer(serializers.ModelSerializer):
-    """Serializer for Role model."""
-
-    class Meta:
-        model = Role
-        fields = ["id", "name", "description", "permissions", "created_at"]
-        read_only_fields = ["id", "created_at"]
-
+    def validate(self, data):
+        username = data.get("username")
+        password = data.get("password")
+        if username and password:
+            try:
+                user = User.objects.get(username=username)
+            except User.DoesNotExist:
+                raise serializers.ValidationError("Invalid credentials.")
+            if not user.check_password(password):
+                raise serializers.ValidationError("Invalid credentials.")
+            data["user"] = user
+        else:
+            raise serializers.ValidationError("Must include username and password.")
+        return data
 
 class UserRoleSerializer(serializers.ModelSerializer):
-    """Serializer for UserRole model."""
-
-    user = UserSerializer(read_only=True)
-    role = RoleSerializer(read_only=True)
-
     class Meta:
         model = UserRole
-        fields = ["id", "user", "role", "assigned_at", "assigned_by"]
-        read_only_fields = ["id", "assigned_at"]
-
-
-class OTPSerializer(serializers.ModelSerializer):
-    """Serializer for OTP model."""
-
-    class Meta:
-        model = OTP
-        fields = ["id", "user", "otp_code", "is_used", "created_at", "expires_at"]
-        read_only_fields = ["id", "created_at", "expires_at"]
-
+        fields = "__all__"
 
 class AuditLogSerializer(serializers.ModelSerializer):
-    """Serializer for AuditLog model."""
-
-    user = UserSerializer(read_only=True)
-
     class Meta:
         model = AuditLog
-        fields = [
-            "id",
-            "user",
-            "action",
-            "resource_type",
-            "resource_id",
-            "details",
-            "ip_address",
-            "user_agent",
-            "created_at",
-        ]
-        read_only_fields = ["id", "created_at"]
-
+        fields = "__all__"
+        read_only_fields = ("user", "created_at")
 
 class PasswordChangeSerializer(serializers.Serializer):
-    """Serializer for password change."""
-
     old_password = serializers.CharField(write_only=True)
     new_password = serializers.CharField(write_only=True)
-    confirm_new_password = serializers.CharField(write_only=True)
 
-    def validate(self, attrs):
-        if attrs["new_password"] != attrs["confirm_new_password"]:
-            raise serializers.ValidationError("New passwords don't match")
-        return attrs
-
+    def validate_new_password(self, value):
+        if len(value) < 8:
+            raise serializers.ValidationError("Password must be at least 8 characters.")
+        if not re.search(r"[A-Z]", value):
+            raise serializers.ValidationError("Password must contain an uppercase letter.")
+        if not re.search(r"[a-z]", value):
+            raise serializers.ValidationError("Password must contain a lowercase letter.")
+        if not re.search(r"\d", value):
+            raise serializers.ValidationError("Password must contain a digit.")
+        if not re.search(r"[^A-Za-z0-9]", value):
+            raise serializers.ValidationError("Password must contain a special character.")
+        return value
 
 class PasswordResetRequestSerializer(serializers.Serializer):
-    """Serializer for password reset request."""
-
     phone_number = serializers.CharField()
 
+    def validate_phone_number(self, value):
+        if not re.match(r"^\+?\d{10,15}$", value):
+            raise serializers.ValidationError("Invalid phone number format.")
+        return value
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
-    """Serializer for password reset confirmation."""
-
+    phone_number = serializers.CharField()
     otp_code = serializers.CharField()
     new_password = serializers.CharField(write_only=True)
-    confirm_new_password = serializers.CharField(write_only=True)
 
-    def validate(self, attrs):
-        if attrs["new_password"] != attrs["confirm_new_password"]:
-            raise serializers.ValidationError("New passwords don't match")
-        return attrs
+    def validate_new_password(self, value):
+        if len(value) < 8:
+            raise serializers.ValidationError("Password must be at least 8 characters.")
+        if not re.search(r"[A-Z]", value):
+            raise serializers.ValidationError("Password must contain an uppercase letter.")
+        if not re.search(r"[a-z]", value):
+            raise serializers.ValidationError("Password must contain a lowercase letter.")
+        if not re.search(r"\d", value):
+            raise serializers.ValidationError("Password must contain a digit.")
+        if not re.search(r"[^A-Za-z0-9]", value):
+            raise serializers.ValidationError("Password must contain a special character.")
+        return value
