@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Rakshaayan Platform Frontend
 
-## Getting Started
+## Quickstart
 
-First, run the development server:
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+2. **Copy environment variables:**
+   ```bash
+   cp env.example .env.local
+   # Edit .env.local with your backend URLs
+   ```
+3. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Folder Structure
+
+```
+frontend/
+├── app/                # Next.js App Router pages
+│   ├── layout.tsx
+│   ├── page.tsx
+│   └── (other routes)
+├── components/         # Reusable UI components (custom + ShadCN wrappers)
+│   └── ui/             # ShadCN components
+├── lib/                # API clients, utility functions
+│   └── api.ts
+├── styles/             # Custom CSS modules (optional)
+├── public/             # Static assets (images, favicon)
+├── env.example         # Example environment variables
+├── tailwind.config.mjs # Tailwind config with design tokens
+├── postcss.config.mjs
+├── tsconfig.json
+├── app/globals.css     # Global styles and CSS variables
+└── README.md
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Design System
+- All color, typography, and effect tokens are set in `tailwind.config.mjs` and `app/globals.css`.
+- Use Tailwind utility classes and ShadCN components for rapid UI development.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ShadCN UI
+- Scaffold new components with:
+  ```bash
+  npx shadcn-ui@latest add <component>
+  ```
+- Customize components in `components/ui/` as needed.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## API Clients
+- Use the pre-configured Axios clients in `lib/api.ts` for each backend service.
 
-## Learn More
+## Start Building
+- Create new pages in `app/`.
+- Import and use ShadCN components from `components/ui/`.
+- Use Tailwind classes and design tokens for layout and styling.
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+For more details, see the main project README and the design system documentation.
