@@ -1,5 +1,0 @@
-POSTGRES_DB=rakshaayan
-POSTGRES_USER=rakshaayan
-POSTGRES_PASSWORD=rakshaayan
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
