@@ -1,594 +1,344 @@
 "use client";
-
-import React, { useEffect, useRef, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { StatsCard } from "@/components/ui/stats-card";
-import { FeatureCard } from "@/components/ui/feature-card";
-import { Button } from "@/components/ui/button";
 import Image from "next/image";
-/*
-import axios from 'axios';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+import Link from "next/link";
+import { ArrowRight, ArrowLeft } from "lucide-react";
+import { useRef, useState, useEffect } from "react";
 
-// Create axios instance with default config
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000, // 10 seconds timeout
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Storage keys for persisting data
-const STORAGE_KEYS = {
-  REPORTS_SUBMITTED: 'cached_reports_submitted',
-  VERIFIED_USERS: 'cached_verified_users',
-  DEVICES_MONITORED: 'cached_devices_monitored',
-  LAST_FETCH_SUCCESS: 'last_fetch_success_timestamp',
-};
-
-// Helper functions for data persistence (using memory storage for Claude.ai compatibility)
-let memoryStorage: { [key: string]: string } = {};
-
-const setStorageItem = (key: string, value: string) => {
-  try {
-    memoryStorage[key] = value;
-  } catch (error) {
-    console.warn('Failed to store data:', error);
-  }
-};
-
-const getStorageItem = (key: string): string | null => {
-  try {
-    return memoryStorage[key] || null;
-  } catch (error) {
-    console.warn('Failed to retrieve stored data:', error);
-    return null;
-  }
-};
-
-interface StatsData {
-  reportsSubmitted: number;
-  verifiedUsers: number;
-  devicesMonitored: number;
-}
-*/
-
-export default function LandingPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [stats, setStats] = useState({
-    reportsSubmitted: 0,
-    verifiedUsers: 0,
-    devicesMonitored: 0,
-  });
-  const [loadingStats, setLoadingStats] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-  const [showAllFeatures, setShowAllFeatures] = useState(false);
-  const featureScrollRef = useRef<HTMLDivElement>(null);
-
-  const features = [
-    {
-      icon: "🔒",
-      title: "Secure Data Handling",
-      description: "Your reports are encrypted and kept confidential to protect patient privacy.",
-      bgColor: "bg-[#4A90E2]",
-      image: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=300&h=200&fit=crop&crop=center"
-    },
-    {
-      icon: "⚡",
-      title: "Real-Time Alerts",
-      description: "Get notified immediately about critical updates on reported events.",
-      bgColor: "bg-[#1A365D]",
-      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300&h=200&fit=crop&crop=center"
-    },
-    {
-      icon: "💻",
-      title: "User-Friendly Interface",
-      description: "Intuitive design for seamless reporting, even for non-technical users.",
-      bgColor: "bg-[#8B5CF6]",
-      image: "https://images.unsplash.com/photo-1561736778-92e52a7769ef?w=300&h=200&fit=crop&crop=center"
-    },
-    {
-      icon: "📊",
-      title: "Analytics Dashboard",
-      description: "Comprehensive reporting and analytics to track device safety trends.",
-      bgColor: "bg-[#10B981]",
-      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300&h=200&fit=crop&crop=center"
-    },
-    {
-      icon: "🔍",
-      title: "Smart Detection",
-      description: "AI-powered system to detect potential safety issues before they escalate.",
-      bgColor: "bg-[#F59E0B]",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=200&fit=crop&crop=center"
-    },
-  ];
-
-  const testimonials = [
-    {
-      text: "It's simple and efficient. I can submit incident reports without interrupting my workflow.",
-      name: "Avinash T",
-      role: "Senior Medical Officer",
-      image: require("../../../figma exports/Rectangle 3.jpg"),
-    },
-    {
-      text: "Having an anonymous option is a huge relief. It lets us be honest without fear of backlash.",
-      name: "Sindu M G",
-      role: "External Mentor", 
-      image: require("../../../figma exports/Rectangle 3 (1).jpg"),
-    },
-    {
-      text: "This platform made it so easy to report an issue. I feel like my concerns are taken seriously!",
-      name: "Krishna Gudi",
-      role: "Internal Mentor",
-      image: require("../../../figma exports/Rectangle 4.png"),
-    },
-  ];
-
-  // Load cached data on component mount
-  // const loadCachedStats = (): StatsData => {
-  //   const cachedReports = getStorageItem(STORAGE_KEYS.REPORTS_SUBMITTED);
-  //   const cachedUsers = getStorageItem(STORAGE_KEYS.VERIFIED_USERS);
-  //   const cachedDevices = getStorageItem(STORAGE_KEYS.DEVICES_MONITORED);
-
-  //   return {
-  //     reportsSubmitted: cachedReports ? parseInt(cachedReports, 10) : 0,
-  //     verifiedUsers: cachedUsers ? parseInt(cachedUsers, 10) : 0,
-  //     devicesMonitored: cachedDevices ? parseInt(cachedDevices, 10) : 0,
-  //   };
-  // };
-
-  // Cache stats data
-  // const cacheStats = (statsData: StatsData) => {
-  //   setStorageItem(STORAGE_KEYS.REPORTS_SUBMITTED, statsData.reportsSubmitted.toString());
-  //   setStorageItem(STORAGE_KEYS.VERIFIED_USERS, statsData.verifiedUsers.toString());
-  //   setStorageItem(STORAGE_KEYS.DEVICES_MONITORED, statsData.devicesMonitored.toString());
-  //   setStorageItem(STORAGE_KEYS.LAST_FETCH_SUCCESS, Date.now().toString());
-  // };
-
-  // Fetch stats from API with enhanced error handling
-  // const fetchStats = async () => {
-  //   setLoadingStats(true);
-  //   setFetchError(null);
-
-  //   try {
-  //     console.log('Fetching stats from:', `${API_BASE_URL}/api/v1/analytics/summary`);
-      
-  //     const response = await apiClient.get('/api/v1/analytics/summary');
-      
-  //     if (response.status === 200 && response.data) {
-  //       const newStats: StatsData = {
-  //         reportsSubmitted: response.data.reports_submitted || 0,
-  //         verifiedUsers: response.data.verified_users || 0,
-  //         devicesMonitored: response.data.devices_monitored || 0,
-  //       };
-
-  //       setStats(newStats);
-  //       cacheStats(newStats);
-  //       console.log('Stats fetched successfully:', newStats);
-  //     } else {
-  //       throw new Error(`Unexpected response status: ${response.status}`);
-  //     }
-  //   } catch (error) {
-  //     console.error('Failed to fetch stats:', error);
-      
-  //     // Load cached data as fallback
-  //     const cachedStats = loadCachedStats();
-  //     setStats(cachedStats);
-      
-  //     // Set appropriate error message
-  //     if (axios.isAxiosError(error)) {
-  //       if (error.code === 'ECONNABORTED') {
-  //         setFetchError('Request timeout - using cached data');
-  //       } else if (error.response) {
-  //         setFetchError(`Server error (${error.response.status}) - using cached data`);
-  //       } else if (error.request) {
-  //         setFetchError('Network error - using cached data');
-  //       } else {
-  //         setFetchError('Request failed - using cached data');
-  //       }
-  //     } else {
-  //       setFetchError('Failed to fetch data - using cached data');
-  //     }
-
-  //     console.log('Using cached stats:', cachedStats);
-  //   } finally {
-  //     setLoadingStats(false);
-  //   }
-  // };
-
-  // Retry mechanism for failed requests
-  // const retryFetch = () => {
-  //   fetchStats();
-  // };
-
-  // useEffect(() => {
-  //   // Load cached data first for immediate display
-  //   const cachedStats = loadCachedStats();
-  //   if (cachedStats.reportsSubmitted > 0 || cachedStats.verifiedUsers > 0 || cachedStats.devicesMonitored > 0) {
-  //     setStats(cachedStats);
-  //     setLoadingStats(false);
-  //   }
-
-  //   // Then fetch fresh data
-  //   fetchStats();
-  // }, []);
-
+// Counter component for animated number counting
+const Counter = ({ end, duration = 2000 }: { end: number; duration?: number }) => {
+  const [count, setCount] = useState(0);
   useEffect(() => {
-    if (searchParams.get("all") === "true") {
-      setShowAllFeatures(true);
-    }
-  }, [searchParams]);
+    let startTime: number;
+    let animationFrame: number;
+    const startAnimation = (timestamp: number) => {
+      startTime = timestamp;
+      animate(timestamp);
+    };
+    const animate = (timestamp: number) => {
+      const runtime = timestamp - startTime;
+      const relativeProgress = runtime / duration!;
+      if (relativeProgress < 1) {
+        setCount(Math.floor(end * relativeProgress));
+        animationFrame = requestAnimationFrame(animate);
+      } else {
+        setCount(end);
+      }
+    };
+    animationFrame = requestAnimationFrame(startAnimation);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [end, duration]);
+  return <>{count}</>;
+};
 
-  const handleSeeAll = () => {
-    setShowAllFeatures(true);
-    router.push("?all=true");
+function LandingNav() {
+  const [lang, setLang] = useState<string>("english");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const navMap = [
+    { title: "Home", path: "/", audioSrc: "/audio/homeEnglish.mp3" },
+    { title: "Clinic Facilities", path: "/", audioSrc: "/audio/clinicFecilitiesEnglish.mp3" },
+    { title: "Testimonials", path: "/", audioSrc: "/audio/testimonialEngllish.mp3" },
+    { title: "Trusted by", path: "/", audioSrc: "/audio/trustedByEnglish.mp3" },
+    { title: "Try Now", path: "/", audioSrc: "/audio/tryNowEnglish.mp3" },
+  ];
+  const audioMappings = {
+    logo: "/audio/nimhans.mp3",
+    signin: "/audio/signin-signup.mp3",
+    language: "/audio/language-selection.mp3",
+    english: "/audio/english.mp3",
+    kannada: "/audio/kannada.mp3"
   };
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const el = e.currentTarget;
-    const isAtEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 10;
-    if (isAtEnd && !showAllFeatures) {
-      setShowAllFeatures(true);
-      router.push("?all=true");
+  const playAudio = (audioSrc: string): void => {
+    stopAudio();
+    if (typeof window !== 'undefined') {
+      if (!audioRef.current) {
+        audioRef.current = new Audio();
+      }
+      audioRef.current.src = audioSrc;
+      audioRef.current.play().catch(error => {
+        console.error("Error playing audio:", error);
+      });
     }
   };
-
-  useEffect(() => {
-    if (!showAllFeatures && featureScrollRef.current) {
-      const interval = setInterval(() => {
-        if (featureScrollRef.current) {
-          featureScrollRef.current.scrollBy({ left: 3, behavior: "smooth" });
-        }
-      }, 20);
-
-      return () => clearInterval(interval);
+  const stopAudio = (): void => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
     }
-  }, [showAllFeatures]);
-
+  };
+  useEffect(() => {
+    return () => {
+      stopAudio();
+    };
+  }, []);
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
   return (
-    <div className="relative min-h-screen bg-white">
-      {/* Navigation Header */}
-      <nav className="w-full bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-bold">N</span>
-            </div>
-            <div>
-              <div className="font-bold text-lg">NIMHANS</div>
-              <div className="text-xs text-gray-600">An Institute of National Importance</div>
+    <nav className="flex w-full flex-wrap items-center justify-between px-5 py-3">
+      {/* Logo and Institution Name */}
+      <div className="flex items-center gap-x-3 z-10">
+        <Image src="/image/nav-left-logo.png" alt="Logo" width={60} height={60} />
+        <div className="flex flex-col">
+          <span className="playFair text-2xl font-medium font-serif">NIMHANS</span>
+          <span className="belleFair text-xs font-serif">
+            An Institute of National Importance
+          </span>
             </div>
           </div>
-          
-          <div className="flex items-center space-x-4">
-            <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">HOME</button>
-            <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">ABOUT</button>
-            <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">CONTACT</button>
-            <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">FEATURES</button>
-            <button className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">SIGN IN / SIGNUP</button>
-            <div className="flex items-center space-x-1 text-sm">
-              <span>🌐</span>
-              <span>English - EN</span>
+      {/* Mobile Menu Button */}
+      <button
+        className="lg:hidden text-gray-600 focus:outline-none z-10"
+        onClick={toggleMobileMenu}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          className="w-6 h-6"
+        >
+          {mobileMenuOpen ? (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          ) : (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          )}
+        </svg>
+      </button>
+      {/* Navigation and Authentication */}
+      <div className={`${mobileMenuOpen ? 'flex' : 'hidden'} lg:flex lg:flex-1 flex-col lg:flex-row w-full lg:w-auto mt-4 lg:mt-0 lg:items-center lg:justify-end`}>
+        {/* Navigation Links */}
+        <div className="flex flex-col lg:flex-row text-sm gap-3 lg:gap-6 font-bold mb-4 lg:mb-0 lg:ml-8">
+          {navMap.map((nav, index) => (
+            <Link href={nav.path} key={index}>
+              <span
+                className="hover:cursor-pointer text-gray-600 block py-2 lg:py-0"
+                onMouseEnter={() => nav.audioSrc && playAudio(nav.audioSrc)}
+              >
+                {nav.title}
+              </span>
+            </Link>
+          ))}
+        </div>
+        {/* Sign In/Sign Up and Language Selector */}
+        <div className="flex flex-col lg:flex-row cursor-pointer items-start lg:items-center gap-y-3 lg:gap-x-4 lg:ml-auto">
+          <button className="bg-lime-400 hover:bg-lime-600 px-2 text-black text-lg rounded-full border-none font-bold cursor-pointer mb-3 lg:mb-0 lg:mx-6">
+            SIGN IN / SIGNUP
+          </button>
+          <div className="relative flex items-center border-2 border-blue-400 rounded-md px-3 py-1">
+            <Image src="/image/nav-right-world.png" alt="Globe Icon" width={17} height={20} className="mr-2" />
+            <select
+              value={lang}
+              onChange={(e) => setLang(e.target.value)}
+              className="bg-blue-100/10 text-lg font-bold cursor-pointer focus:outline-none"
+            >
+              <option disabled>Select language</option>
+              <option value="english">English - En</option>
+              <option value="kannada">Kannada - Kn</option>
+            </select>
             </div>
           </div>
         </div>
       </nav>
+  );
+}
 
-      <div className="container mx-auto px-4 py-10">
+function HeroSection() {
+  return (
+    <div className="md:px-12 lg:px-24">
         {/* Hero Section */}
-        <section className="relative mb-16">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
-                Your Gateway To Medical Device Safety Reporting
-              </h1>
-              <p className="text-xl text-gray-700 mb-6 max-w-lg">
-                Simplifying the process of reporting adverse medical device events for everyone
-              </p>
-              <Button className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-full">
-                LEARN MORE
-              </Button>
+      <div className="flex flex-col lg:flex-row items-center text-center lg:text-left mb-2">
+        <div className="">
+          <h1 className="text-3xl sm:text-4xl font-serif">Your Gateway To Medical</h1>
+          <h1 className="font-serif text-3xl sm:text-4xl">Device Safety Reporting</h1>
+          <p className="text-lg font-bold mt-2 text-black">Simplifying the process of reporting</p>
+          <p className="text-lg font-bold text-black">adverse medical device events for</p>
+          <p className="text-lg font-bold text-black">everyone</p>
             </div>
-            
-            {/* Hero Image */}
-            <div className="relative">
-              <div className="bg-gradient-to-br from-blue-100 to-green-100 rounded-3xl p-8 relative overflow-hidden">
-                {/* Medical illustration placeholder - replace with actual image */}
-                <div className="w-full h-64 flex items-center justify-center">
-                  <div className="text-6xl">🏥</div>
+        {/* Image */}
+        <div className="w-full max-w-xs sm:max-w-md lg:max-w-lg mt-6 lg:ml-auto mr-[-90px]">
+          <Image src="/image/hospital.png" alt="Medical Illustration" width={450} height={300} layout="responsive" />
                 </div>
+        <div className="hidden lg:block absolute top-[-700px] right-0 left-156 w-160 h-240 bg-blue-500/10 rounded-bl-[500px]"></div>
+        <div className="hidden lg:block absolute top-[-320px] right-0 left-156 w-160 h-260 border border-green-600 rounded-bl-[3000px] rounded-tl-[2000px]"></div>
               </div>
-            </div>
-          </div>
-          
-          {/* Info Cards Below Hero */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-            <div className="bg-blue-50 p-6 rounded-lg">
-              <h3 className="font-bold text-blue-900 mb-2">Business Solution</h3>
-              <p className="text-sm text-blue-800">
-                Understand the importance of reporting adverse events to improve device safety and regulatory compliance.
-              </p>
-            </div>
-            <div className="bg-blue-50 p-6 rounded-lg">
-              <h3 className="font-bold text-blue-900 mb-2">Who Can Report?</h3>
-              <p className="text-sm text-blue-800">
-                Patients, Caretakers, Healthcare Professionals, and many more.....
-              </p>
-            </div>
-            <div className="bg-blue-50 p-6 rounded-lg">
-              <h3 className="font-bold text-blue-900 mb-2">Event Types</h3>
-              <p className="text-sm text-blue-800">
-                Report any adverse events, including device malfunctions, injuries, or safety concerns and many more.....
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Stats Section */}
-        <section className="mb-16">
-          {/* Error message and retry button */}
-          {/* {fetchError && (
-            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-              <div className="flex items-center justify-between">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm text-yellow-700">{fetchError}</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={retryFetch}
-                  className="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 px-3 py-1 rounded text-sm font-medium transition-colors"
-                  disabled={loadingStats}
-                >
-                  {loadingStats ? 'Retrying...' : 'Retry'}
+      {/* Learn More Button */}
+      <div className="mt-1 flex justify-center lg:justify-start">
+        <button className="bg-blue-600 bg-gradient-to-r from-blue-400 to-blue hover:bg-blue-600 cursor-pointer px-15 py-1 text-black text-lg rounded-full border-none font-bold">
+          LEARN MORE
                 </button>
               </div>
+      {/* Business Solutions Section */}
+      <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center lg:justify-start mt-8 space-y-6 sm:space-y-0 sm:space-x-8">
+        <div className="text-center mr-20 sm:text-left">
+          <h1 className="text-lg font-bold text-blue-800">Business Solution</h1>
+          <p className="text-sm text-gray-600">Understand the importance of reporting</p>
+          <p className="text-sm text-gray-600">adverse events to improve device safety</p>
+          <p className="text-sm text-gray-600">and regulatory compliance.</p>
+          <div className="w-full h-1 bg-blue-500 rounded-full my-2"></div>
             </div>
-          )} */}
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-4">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-                  <span className="text-2xl">👥</span>
+        {/* Vertical Line (Hidden on small screens) */}
+        <div className="hidden sm:block w-[1px] h-20 bg-gray-300"></div>
+        <div className="text-center ml-10 mr-20 sm:text-left">
+          <h1 className="text-xl text-black">Who Can Report?</h1>
+          <p className="text-sm text-gray-600">Patients, Caretakers, Healthcare</p>
+          <p className="text-sm text-gray-600">Professionals, and many more .....</p>
                 </div>
-                <div className="text-left">
-                  <div className="text-3xl font-bold text-green-600">
-                    {loadingStats && stats.reportsSubmitted === 0 ? (
-                      <div className="animate-pulse bg-gray-200 h-8 w-16 rounded"></div>
-                    ) : (
-                      `${stats.reportsSubmitted}+`
-                    )}
-                  </div>
-                  <div className="text-gray-700 font-medium">Reports Submitted</div>
+        {/* Vertical Line (Hidden on small screens) */}
+        <div className="hidden sm:block w-[1px] h-20 bg-gray-300"></div>
+        <div className="text-center ml-10 sm:text-left">
+          <h1 className="text-xl text-black">Event Types</h1>
+          <p className="text-sm text-gray-600">Report any adverse events, including device</p>
+          <p className="text-sm text-gray-600">malfunctions, injuries, or safety concerns</p>
+          <p className="text-sm text-gray-600">and many more...</p>
                 </div>
               </div>
-            </div>
-            
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-4">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-                  <span className="text-2xl">🏠</span>
-                </div>
-                <div className="text-left">
-                  <div className="text-3xl font-bold text-green-600">
-                    {loadingStats && stats.verifiedUsers === 0 ? (
-                      <div className="animate-pulse bg-gray-200 h-8 w-16 rounded"></div>
-                    ) : (
-                      `${stats.verifiedUsers}+`
-                    )}
-                  </div>
-                  <div className="text-gray-700 font-medium">Verified Users</div>
+      {/* Statistics Section */}
+      <div className="flex flex-col lg:flex lg:gap-x-60 sm:flex-row flex-wrap justify-center gap-x-20 mt-8 mb-5">
+        {/* First Item */}
+        <div className="flex items-center space-x-4">
+          <Image src="/image/landing-middle-people.png" alt="Report Submitted" width={50} height={50} />
+          <div>
+            <h2 className="text-2xl text-green-800 font-bold">+<Counter end={1500} /></h2>
+            <p className="text-sm text-gray-600">Reports Submitted</p>
                 </div>
               </div>
+        {/* Second Item */}
+        <div className="flex ml-[-20px] items-center space-x-5">
+          <Image src="/image/landing-middle-home.png" alt="Verified Users" width={50} height={50} />
+          <div>
+            <h2 className="text-2xl text-green-800 font-bold">+<Counter end={500} /></h2>
+            <p className="text-sm text-gray-600">Verified Users</p>
             </div>
-            
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-4">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-                  <span className="text-2xl">🏥</span>
                 </div>
-                <div className="text-left">
-                  <div className="text-3xl font-bold text-green-600">
-                    {loadingStats && stats.devicesMonitored === 0 ? (
-                      <div className="animate-pulse bg-gray-200 h-8 w-16 rounded"></div>
-                    ) : (
-                      `${stats.devicesMonitored}+`
-                    )}
-                  </div>
-                  <div className="text-gray-700 font-medium">Devices Monitored</div>
+        {/* Third Item */}
+        <div className="flex ml-[-20px] items-center space-x-4">
+          <Image src="/image/landing-middle-plus.png" alt="Devices Monitored" width={50} height={50} />
+          <div>
+            <h2 className="text-2xl text-green-800 font-bold">+<Counter end={100} /></h2>
+            <p className="text-sm text-gray-600">Devices Monitored</p>
                 </div>
               </div>
             </div>
           </div>
-        </section>
+  );
+}
 
-        {/* Features Section */}
-        <section className="mb-16 relative">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">Features</h2>
-            <button 
-              onClick={handleSeeAll}
-              className="flex items-center text-blue-500 font-semibold hover:text-blue-600 transition-colors"
-            >
-              SEE ALL <span className="ml-2">→</span>
+function FeatureSection() {
+  return (
+    <div>
+      <h1 className="ml-24 text-3xl font-bold mt-10">Features</h1>
+      <button className="mt-8 mb-2 ml-230 cursor-pointer flex items-center gap-1 text-lg text-blue-500 font-bold">
+        SEE ALL
+        <ArrowRight className="w-7 h-6" />
             </button>
+      <div className="absolute top-[680px] right-0 left-[-40px] w-140 h-130 border-1 border-gray-500 rounded-full -z-10"></div>
+      <div className="flex">
+        <div className="bg-sky-300 ml-10 mt-2 w-60 h-70 rounded-[25px] shadow-lg shadow-gray-700/40 flex flex-col items-center">
+          <Image src="/lock.png" alt="Secure Data Handling" width={80} height={80} className="mt-4" />
+          <h1 className="text-sm text-center mt-3 font-bold">Secure Data Handling</h1>
+          <p className="text-xs text-center mt-3 ml-4 mr-4">
+            Your reports are encrypted and kept confidential to protect patient privacy.
+          </p>
+          <button className="text-xs w-24 h-9 bg-lime-400 py-3 px-2 mt-2 rounded-br-[25px] rounded-tl-[25px] cursor-pointer">SEE DETAILS</button>
           </div>
-          
-          <div className="relative">
-            {/* Large circular background with medical illustration */}
-            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-96 h-96 border-2 border-gray-200 rounded-full flex items-center justify-center bg-white">
-              {/* Medical illustration - stethoscope with heart */}
-              <div className="relative w-80 h-80 flex items-center justify-center">
-                {/* Heart shape */}
-                <div className="absolute w-48 h-40 bg-pink-200 rounded-full transform rotate-45 top-16 left-16"></div>
-                <div className="absolute w-48 h-40 bg-pink-200 rounded-full transform -rotate-45 top-16 left-16"></div>
-                <div className="absolute w-40 h-32 bg-pink-300 rounded-full transform rotate-45 top-20 left-20"></div>
-                
-                {/* EKG line */}
-                <div className="absolute top-32 left-12 w-60 h-1 bg-pink-500 z-10">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-pink-600 to-transparent"></div>
+        <div className="bg-sky-300 w-60 h-70 mt-10 ml-20 rounded-[25px] shadow-lg shadow-gray-700/40 flex flex-col items-center">
+          <Image src="/image/alert.png" alt="Real-Time Alerts" width={80} height={80} className="mt-4" />
+          <h1 className="text-sm text-center mt-3 font-bold">Real-Time Alerts</h1>
+          <p className="text-xs text-center mt-3 ml-4 mr-4">
+            Get notified immediately about critical updates on reported events.
+          </p>
+          <button className="text-xs w-24 h-9 bg-lime-400 py-3 px-2 mt-6 rounded-br-[25px] rounded-tl-[25px] cursor-pointer">SEE DETAILS</button>
                 </div>
-                
-                {/* Stethoscope */}
-                <div className="absolute top-8 left-32 w-4 h-32 bg-teal-400 rounded-full transform rotate-12"></div>
-                <div className="absolute top-6 left-36 w-6 h-6 bg-teal-500 rounded-full"></div>
-                
-                {/* Medical professionals */}
-                <div className="absolute bottom-8 left-4">
-                  <div className="w-12 h-16 bg-blue-400 rounded-t-full"></div>
-                  <div className="w-8 h-8 bg-orange-300 rounded-full mx-auto -mt-2"></div>
+        <div className="bg-sky-300 w-60 mt-2 h-70 ml-20 rounded-[25px] shadow-lg shadow-gray-700/40 flex flex-col items-center">
+          <Image src="/image/interface.png" alt="User-Friendly Interface" width={80} height={80} className="mt-4" />
+          <h1 className="text-sm text-center mt-3 font-bold">User-Friendly Interface</h1>
+          <p className="text-xs text-center mt-3 ml-4 mr-4">Intuitive design for seamless reporting even for non-technical users.</p>
+          <button className="text-xs w-24 h-9 bg-lime-400 py-3 px-2 mt-6 rounded-br-[25px] rounded-tl-[25px] cursor-pointer">SEE DETAILS</button>
                 </div>
-                <div className="absolute bottom-8 left-20">
-                  <div className="w-12 h-16 bg-white rounded-t-full border-2 border-gray-300"></div>
-                  <div className="w-8 h-8 bg-orange-300 rounded-full mx-auto -mt-2"></div>
                 </div>
-                
-                {/* Decorative elements */}
-                <div className="absolute bottom-16 right-8 w-8 h-16 bg-green-400 rounded-full transform rotate-45"></div>
-                <div className="absolute bottom-12 right-4 w-6 h-12 bg-green-300 rounded-full transform -rotate-12"></div>
-              </div>
-              
-              {/* Navigation arrows */}
-              <button className="absolute left-4 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200">
-                ←
+      <div className="flex ml-5">
+        <button className="mt-1 ml-40 cursor-pointer text-blue-500 font-bold">
+          <ArrowRight className="w-9 h-8" />
               </button>
-              <button className="absolute right-4 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200">
-                →
-              </button>
-            </div>
-            
-            {/* Feature cards */}
-            <div className="ml-80 pl-16">
-              <div className="flex gap-6 overflow-x-auto pb-4">
-                {(showAllFeatures ? features : features.slice(0, 3)).map((feature, idx) => (
-                  <div key={idx} className={`${feature.bgColor} rounded-2xl shadow-lg min-w-[280px] max-w-[320px] text-white overflow-hidden`}>
-                    {/* Feature image */}
-                    <div className="h-32 bg-cover bg-center relative" style={{backgroundImage: `url(${feature.image})`}}>
-                      <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-                      <div className="absolute top-4 left-4 text-4xl">{feature.icon}</div>
-                    </div>
-                    
-                    {/* Content */}
-                    <div className="p-6">
-                      <h3 className="text-[20px] font-semibold leading-6 mb-3">{feature.title}</h3>
-                      <p className="text-[16px] mb-4 opacity-90 leading-relaxed">{feature.description}</p>
-                      <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded text-sm font-semibold transition-colors">
-                        SEE DETAILS
+        <button className="mt-1 ml-2 cursor-pointer text-blue-500 font-bold">
+          <ArrowLeft className="w-9 h-8" />
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
+  );
+}
 
-        {/* Testimonials Section */}
-        <section className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">"What Our Users Say"</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {testimonials.map((testimonial, idx) => (
-              <div key={idx} className="bg-gradient-to-br from-blue-400 to-cyan-400 rounded-2xl p-6 text-white text-center shadow-lg">
-                <p className="text-[16px] mb-4 leading-relaxed">{testimonial.text}</p>
-                <div className="flex items-center justify-center gap-1 mb-4">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <span key={i} className="text-yellow-400 text-lg">★</span>
-                  ))}
-                </div>
-                <div className="flex items-center justify-center space-x-3">
-                  <Image
-                    src={testimonial.image}
-                    width={48}
-                    height={48}
-                    alt={testimonial.name}
-                    className="rounded-full border-2 border-white shadow"
-                  />
-                  <div className="text-left">
-                    <div className="font-semibold">{testimonial.name}</div>
-                    <div className="text-sm opacity-90">{testimonial.role}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+const testimonials = [
+  {
+    text: "It’s simple and efficient. I can submit incident reports without interrupting my workflow.",
+    name: "Avinash T",
+    role: "Senior Medical Officer",
+    image: "/image/user1.jpg",
+  },
+  {
+    text: "Having an anonymous option is a huge relief. It lets us be honest without fear of backlash.",
+    name: "Sindu M G",
+    role: "External Mentor",
+    image: "/image/user2.png",
+  },
+  {
+    text: "This platform made it so easy to report an issue. I feel like my concerns are taken seriously!",
+    name: "Krishna Gudi",
+    role: "Internal Mentor",
+    image: "/image/user3.png",
+  },
+];
 
-        {/* Call to Action */}
-        <section className="mb-16">
-          <div className="bg-gradient-to-r from-cyan-400 to-blue-500 rounded-2xl p-8 text-center text-white">
-            <h2 className="text-2xl font-bold mb-4">Ready to get started ?</h2>
-            <button className="bg-white text-blue-500 px-8 py-3 rounded-full font-semibold hover:bg-gray-100">
-              REPORT NOW
-            </button>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <footer className="border-t pt-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">N</span>
-                </div>
-                <div>
-                  <div className="font-bold">NIMHANS</div>
-                  <div className="text-xs text-gray-600">An Institute of National Importance</div>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600">
-                Institute of National Importance Operating Autonomously under the Ministry of Health and Family Welfare
-              </p>
+function Testimonials() {
+  return (
+    <div className="mt-3 bg-white text-black p-10">
+      <h2 className="text-4xl font-bold text-left mb-12">"What Our Users Say"</h2>
+      <div className="flex justify-start gap-10 flex-wrap relative">
+        <div className="absolute left-0 top-1/2 transform -translate-y-1/2"></div>
+        {testimonials.map((testimonial, index) => (
+          <div key={index} className="relative bg-[#59D5F7] p-8 w-70 h-70 flex flex-col items-center text-center shadow-lg rounded-tl-none rounded-tr-full rounded-bl-full rounded-br-full">
+            <p className="text-lg leading-tight text-left">{testimonial.text}</p>
+            <div className="flex justify-start mt-5 ml-[-100px]">
+              {Array(5).fill("⭐").map((star, i) => (
+                <span key={i}>{star}</span>
+              ))}
             </div>
-            
-            <div>
-              <h3 className="font-bold text-gray-900 mb-4">COMPANY</h3>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li>About Us</li>
-                <li>Careers</li>
-              </ul>
+            <div className="absolute right-1/2 bottom-2 transform  translate-x-1/2 flex flex-col items-center p-2">
+              <p className="font-bold text-left">{testimonial.name}</p>
+              <p className="text-xs text-gray-700 text-left">{testimonial.role}</p>
             </div>
-            
-            <div>
-              <h3 className="font-bold text-gray-900 mb-4">SERVICES</h3>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li>Reporting Guidelines</li>
-                <li>FAQs</li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="font-bold text-gray-900 mb-4">RESOURCES</h3>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li>Knowledge Base</li>
-                <li>Latest Updates</li>
-              </ul>
+            <div className={`absolute right-2 bottom-3 flex flex-col items-end p-2 ${index === 0 ? 'right-1' : ''}`}>
+              <Image src={testimonial.image} alt={testimonial.name} width={50} height={50} className="rounded-tl-[200px] rounded-tr-[200px] rounded-bl-[200px]" />
             </div>
           </div>
-          
-          <div className="text-center text-sm text-gray-600 border-t pt-4">
-            © 2024 Rakshaayan. All rights reserved
+        ))}
+        <div className="absolute ml-2 right-[-40px] top-1/2 transform -translate-y-1/2">
+          <Image src="/image/landing-right-banner2.png" alt="Illustration" width={260} height={250} className="rounded-lg" />
+        </div>
           </div>
-        </footer>
+      <div className="flex ml-10 mr-10 justify-between items-center mt-16 p-6 bg-gradient-to-r from-[#03ACF2] to-[#C8E6C9] rounded-xl shadow-md">
+        <p className="text-xl font-bold text-left text-black">Ready to get started ?</p>
+        <button className="bg-white text-blue-500 py-1 mr-10 px-15 rounded-full font-semibold shadow cursor-pointer">REPORT NOW</button>
       </div>
-      
-      {/* Decorative running image at bottom right */}
-      <div className="absolute bottom-0 right-0 z-0 pointer-events-none select-none">
-        <Image
-          src={require("../../../figma exports/image 1.png")}
-          width={400}
-          height={360}
-          alt="People running"
-        />
-      </div>
+      {/* Footer section can be added here if needed */}
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <>
+      <div className="relative z-50">
+        <LandingNav />
+      </div>
+      <HeroSection />
+      <FeatureSection />
+      <Testimonials />
+      {/* Running illustration at the bottom right */}
+      <div className="absolute bottom-0 right-0 z-0 pointer-events-none select-none">
+        <Image src="/running.png" width={400} height={360} alt="People running" />
+      </div>
+    </>
   );
 }
