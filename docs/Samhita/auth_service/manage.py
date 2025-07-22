@@ -3,7 +3,6 @@
 import os
 import sys
 
-
 def main():
     """Run administrative tasks."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'auth_service.settings')
@@ -15,8 +14,12 @@ def main():
             "available on your PYTHONPATH environment variable? Did you "
             "forget to activate a virtual environment?"
         ) from exc
-    execute_from_command_line(sys.argv)
 
+    # Run on port 8001 by default if no args are given
+    if len(sys.argv) == 1:
+        sys.argv += ['runserver', '8001']
+
+    execute_from_command_line(sys.argv)
 
 if __name__ == '__main__':
     main()
