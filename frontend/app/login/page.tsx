@@ -2,7 +2,6 @@
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import api from "@/utils/axiosInstance";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -13,19 +12,40 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
     if (!username || !password) {
       setError("Please enter both username and password.");
       return;
     }
+
     try {
-      const res = await api.post("/auth/login/", { username, password });
-      // Store user info in localStorage for profile/dashboard
-      localStorage.setItem("userRole", res.data.role || "patient");
-      localStorage.setItem("userName", res.data.name || username);
-      localStorage.setItem("userEmail", res.data.email || "");
-      router.push("/dashboard");
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || "Invalid credentials");
+      const response = await fetch("http://127.0.0.1:8001/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      console.log("Login response status:", response.status);
+
+      const data = await response.json();
+      console.log("Login response data:", data);
+
+      if (response.ok) {
+        // Store user info
+        localStorage.setItem("userRole", data.role || "patient");
+        localStorage.setItem("userName", data.name || username);
+        localStorage.setItem("userEmail", data.email || "");
+
+        // Redirect to dashboard
+        router.push("/dashboard");
+      } else {
+        setError(data.detail || "Invalid username or password.");
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("Unable to connect to backend.");
     }
   }
 
@@ -42,14 +62,14 @@ export default function LoginPage() {
                 type="text"
                 placeholder="Username / Mobile Number"
                 value={username}
-                onChange={e => setUsername(e.target.value)}
+                onChange={(e) => setUsername(e.target.value)}
                 className="w-full border-b border-gray-400 bg-transparent text-gray-700 py-2 mb-4 focus:outline-none focus:border-blue-500"
               />
               <input
                 type="password"
                 placeholder="Password"
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full border-b border-gray-400 bg-transparent text-gray-700 py-2 mb-6 focus:outline-none focus:border-blue-500"
               />
               {error && <div className="text-red-600 text-sm mb-2">{error}</div>}
@@ -75,10 +95,10 @@ export default function LoginPage() {
               </div>
             </form>
           </div>
+
           {/* Right: Illustration and Text */}
           <div className="flex-1 flex flex-col justify-center items-center p-8">
-            {/* Removed heading and description, only image remains */}
-            <div className="mt-[-32px]"> {/* Move image up */}
+            <div className="mt-[-32px]">
               <Image
                 src={require("../../../figma exports/Right Side (1).png")}
                 alt="Security Illustration"
@@ -90,6 +110,7 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
       {/* Footer */}
       <footer className="bg-[#CFFAFE] w-full text-center py-3">
         <p className="text-xs text-gray-600">

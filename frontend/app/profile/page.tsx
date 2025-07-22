@@ -1,47 +1,58 @@
 "use client";
-import Link from "next/link";
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import api from "@/utils/axiosInstance";
 
-export default function ProfilePage() {
-  const [user, setUser] = useState({ name: "", email: "", role: "" });
+export default function UpdateProfilePage() {
+  const router = useRouter();
+  const [form, setForm] = useState({ name: "", email: "" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const router = useRouter();
 
   useEffect(() => {
     async function fetchProfile() {
       try {
-        // Optionally, check for auth token/localStorage here
         const res = await api.get("/profile/");
-        setUser({
-          name: res.data.name,
-          email: res.data.email,
-          role: res.data.role,
-        });
+        setForm({ name: res.data.name, email: res.data.email });
         setLoading(false);
-      } catch (err: any) {
-        setError("Not logged in or failed to fetch profile.");
+      } catch (err) {
+        setError("Failed to load profile");
         setLoading(false);
-        setTimeout(() => router.replace("/login"), 1500);
       }
     }
     fetchProfile();
-  }, [router]);
+  }, []);
 
-  if (loading) return <div>Loading profile...</div>;
+  async function handleSubmit(e: any) {
+    e.preventDefault();
+    setError("");
+    try {
+      await api.post("/profile/update/", form);
+      router.push("/profile");
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "Failed to update profile");
+    }
+  }
+
+  if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
   return (
-    <div>
-      <h2>Profile</h2>
-      <p>Name: {user.name}</p>
-      <p>Email: {user.email}</p>
-      <p>Role: {user.role}</p>
-      <Link href="/profile/update">Update Profile</Link><br/>
-      <Link href="/change-password">Change Password</Link><br/>
-      <Link href="/dashboard">Back to Dashboard</Link>
-    </div>
+    <form onSubmit={handleSubmit}>
+      <h2>Update Profile</h2>
+      <input
+        placeholder="Name"
+        name="name"
+        value={form.name}
+        onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+      /><br/>
+      <input
+        placeholder="Email"
+        name="email"
+        value={form.email}
+        onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+      /><br/>
+      <button type="submit">Update</button>
+    </form>
   );
 } 

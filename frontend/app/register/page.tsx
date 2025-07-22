@@ -1,18 +1,18 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Signup() {
   const router = useRouter();
-  const API_BASE_URL = "https://your-api-base-url.com"; // Replace this
+  const API_BASE_URL = "http://127.0.0.1:8001";
 
-  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
-  const [selectedUserType, setSelectedUserType] = useState("");
+  const [userType, setUserType] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,17 +20,17 @@ export default function Signup() {
   const [otpSuccess, setOtpSuccess] = useState("");
 
   const isFormValid =
-    name &&
+    username &&
     email.includes("@") &&
     mobileNumber.length === 10 &&
     password.length >= 6 &&
-    selectedUserType &&
+    userType &&
     termsAccepted &&
     otpVerified;
 
   const handleSendOtp = async () => {
     if (mobileNumber.length !== 10) {
-      setOtpError("Enter valid 10-digit mobile number");
+      setOtpError("Enter a valid 10-digit mobile number");
       return;
     }
 
@@ -39,28 +39,28 @@ export default function Signup() {
     setOtpSuccess("");
 
     try {
-      const res = await fetch(`${API_BASE_URL}/send-otp`, {
+      const response = await fetch(`${API_BASE_URL}/request-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mobileNumber }),
+        body: JSON.stringify({ mobile_number: mobileNumber }),
       });
 
-      const data = await res.json();
-      if (res.ok) {
+      const data = await response.json();
+      if (response.ok) {
         setOtpSent(true);
-        setOtpSuccess("OTP sent successfully to your mobile number.");
+        setOtpSuccess("OTP sent successfully to your mobile.");
       } else {
-        setOtpError(data.message || "Failed to send OTP");
+        setOtpError(data.message || "Failed to send OTP.");
       }
-    } catch (err) {
-      setOtpError("Network error. Please try again.");
+    } catch (error) {
+      setOtpError("Server not responding. Check backend or API URL.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleVerifyOtp = async () => {
-    if (otp.length !== 6 || !otpSent) {
+    if (!otp || otp.length !== 6) {
       setOtpError("Enter a valid 6-digit OTP.");
       return;
     }
@@ -70,22 +70,24 @@ export default function Signup() {
     setOtpSuccess("");
 
     try {
-      const res = await fetch(`${API_BASE_URL}/verify-otp`, {
+      const response = await fetch(`${API_BASE_URL}/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mobileNumber, otp }),
+        body: JSON.stringify({
+          mobile_number: mobileNumber,
+          otp,
+        }),
       });
 
-      const data = await res.json();
-      if (res.ok && data.verified) {
+      const data = await response.json();
+      if (response.ok && data.verified) {
         setOtpVerified(true);
         setOtpSuccess("OTP verified successfully.");
       } else {
-        setOtpVerified(false);
         setOtpError(data.message || "Invalid OTP.");
       }
-    } catch (err) {
-      setOtpError("Verification failed. Try again.");
+    } catch (error) {
+      setOtpError("Verification failed. Server may be down.");
     } finally {
       setLoading(false);
     }
@@ -94,30 +96,32 @@ export default function Signup() {
   const handleRegister = async () => {
     if (!isFormValid) return;
 
-    try {
-      const payload = {
-        name,
-        email,
-        mobileNumber,
-        password,
-        userType: selectedUserType,
-      };
+    const payload = {
+      username,
+      usertype: userType,
+      mobile_number: mobileNumber,
+      email,
+      password,
+    };
 
-      const res = await fetch(`${API_BASE_URL}/register`, {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
-
-      if (res.ok) {
+      const data = await response.json();
+      if (response.ok) {
         router.push("/dashboard");
       } else {
-        alert(data.message || "Registration failed");
+        alert(data.message || "Registration failed.");
       }
-    } catch (err) {
-      alert("Something went wrong.");
+    } catch (error) {
+      alert("Something went wrong during registration.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -130,7 +134,7 @@ export default function Signup() {
       <div className="max-w-xl w-full mx-auto bg-white shadow-lg border border-blue-200 p-8 rounded-xl">
         <h2 className="text-xl font-bold text-blue-900 mb-2">Create Your Account</h2>
 
-        {/* User Type */}
+        {/* User Type Selection */}
         <div className="mb-4">
           <p className="font-bold mb-2">I am</p>
           <div className="flex flex-wrap gap-2">
@@ -140,31 +144,31 @@ export default function Signup() {
               { label: "Manufacturer", value: "manufacturer", icon: "🏭" },
               { label: "Staff", value: "hospital_staff", icon: "🏥" },
               { label: "Media", value: "media", icon: "📰" },
-            ].map((opt) => (
+            ].map((item) => (
               <button
-                key={opt.value}
+                key={item.value}
                 type="button"
-                onClick={() => setSelectedUserType(opt.value)}
+                onClick={() => setUserType(item.value)}
                 className={`px-3 py-1 rounded-full text-sm font-medium border ${
-                  selectedUserType === opt.value
+                  userType === item.value
                     ? "bg-blue-100 border-blue-500 text-blue-700"
                     : "bg-white border-gray-300 text-gray-700 hover:bg-gray-100"
                 }`}
               >
-                {opt.icon} {opt.label}
+                {item.icon} {item.label}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Name */}
+        {/* Username */}
         <div className="mb-4">
           <input
             type="text"
             placeholder="Username"
             className="w-full border-b py-2 outline-none"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
           />
         </div>
 
@@ -179,7 +183,7 @@ export default function Signup() {
           />
         </div>
 
-        {/* Phone */}
+        {/* Mobile Number */}
         <div className="mb-4">
           <input
             type="text"
@@ -188,10 +192,10 @@ export default function Signup() {
             maxLength={10}
             value={mobileNumber}
             onChange={(e) => {
-              setMobileNumber(e.target.value.replace(/\D/g, "").slice(0, 10));
+              setMobileNumber(e.target.value.replace(/\D/g, ""));
               setOtp("");
-              setOtpVerified(false);
               setOtpSent(false);
+              setOtpVerified(false);
               setOtpError("");
               setOtpSuccess("");
             }}
@@ -206,12 +210,12 @@ export default function Signup() {
           </button>
         </div>
 
-        {/* OTP Input */}
+        {/* OTP Field */}
         {otpSent && (
           <div className="mb-4">
             <input
               type="text"
-              placeholder="Enter 6-digit OTP"
+              placeholder="Enter OTP"
               className="w-full border-b py-2 outline-none"
               value={otp}
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
@@ -229,7 +233,7 @@ export default function Signup() {
           </div>
         )}
 
-        {/* Password - Only after OTP verified */}
+        {/* Password Field */}
         {otpVerified && (
           <div className="mb-4">
             <input
@@ -242,7 +246,7 @@ export default function Signup() {
           </div>
         )}
 
-        {/* Terms and Continue */}
+        {/* Terms & Conditions */}
         <div className="flex justify-between items-center mb-4">
           <label className="flex gap-2 text-sm">
             <input
@@ -257,7 +261,7 @@ export default function Signup() {
 
         <button
           onClick={handleRegister}
-          disabled={!isFormValid}
+          disabled={!isFormValid || loading}
           className={`w-full py-2 rounded text-white font-semibold ${
             isFormValid ? "bg-lime-500 hover:bg-lime-600" : "bg-gray-300 cursor-not-allowed"
           }`}
