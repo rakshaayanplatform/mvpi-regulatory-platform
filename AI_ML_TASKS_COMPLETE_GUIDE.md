@@ -2,15 +2,7 @@
 
 ## 📋 PROJECT OVERVIEW
 
-This document provides a **COMPLETE** guide for the urgent AI/ML development tasks for the Medical Device Adverse Event Reporting System (MvPI) project. The system leverages artificial intelligence and large language models to enhance adverse event monitoring, prediction, and analysis for medical devices in India.
-
-## ⚠️ CRITICAL TIMELINE CONSTRAINTS
-
-- **Available Time:** 11 days (19th to 30th)
-- **Developer Capacity:** 1 person, 3 hours per day
-- **Total Available Hours:** 33 hours
-- **Priority:** Essential features only
-- **Architecture:** FastAPI-based microservices with API-first approach
+This document provides a **COMPLETE** guide for the AI/ML development tasks for the Medical Device Adverse Event Reporting System (MvPI) project. The system leverages artificial intelligence and large language models to enhance adverse event monitoring, prediction, and analysis for medical devices in India.
 
 ---
 
@@ -18,27 +10,27 @@ This document provides a **COMPLETE** guide for the urgent AI/ML development tas
 
 ### ✅ COMPLETED COMPONENTS
 
-#### 1. **Adverse Event Predictor** (`presentML/adverse_event_predictor.py`) - 723 lines
+#### 1. **Adverse Event Predictor** (`presentML/adverse_event_predictor.py`)
 - Complete ML pipeline with Random Forest, Gradient Boosting, Logistic Regression
 - Data preprocessing, model training, evaluation, and prediction capabilities
 - Feature importance analysis and visualization
 
-#### 2. **Gemini QA Chatbot** (`presentML/gemini_qa_chatbot.py`) - 419 lines
+#### 2. **Gemini QA Chatbot** (`presentML/gemini_qa_chatbot.py`)
 - Standalone chatbot with conversation management
 - API integration with Google Gemini
 - Message history and export functionality
 
-#### 3. **OCR Module** (`presentML/ocr_module.py`) - 312 lines
+#### 3. **OCR Module** (`presentML/ocr_module.py`)
 - Text extraction from medical documents and images
 - Multiple preprocessing techniques
 - Confidence scoring and batch processing
 
-#### 4. **Medical Device Monitor** (`presentML/medical_device_monitor.py`) - 588 lines
+#### 4. **Medical Device Monitor** (`presentML/medical_device_monitor.py`)
 - Social media monitoring and sentiment analysis
 - Real-time alert generation
 - FDA report generation capabilities
 
-#### 5. **Global Recalls Monitor** (`presentML/global_recalls_monitor.py`) - 315 lines
+#### 5. **Global Recalls Monitor** (`presentML/global_recalls_monitor.py`)
 - Multi-country recall monitoring
 - Text categorization and summarization
 - Regulatory authority integration
@@ -82,52 +74,6 @@ This document provides a **COMPLETE** guide for the urgent AI/ML development tas
 5. **LLM Development** - Custom models for MvPI data
 6. **Comprehensive Dashboard** - Multi-dimensional views
 7. **Production Deployment** - Ready for deployment
-
----
-
-## 🚀 IMMEDIATE NEXT STEPS (START TODAY)
-
-### Task 1.1: Speech-to-Text API Implementation
-**Start Date:** TODAY | **Deadline:** Day 2 | **Hours:** 4
-
-**What to do:**
-1. Navigate to FastAPI service directory:
-   ```bash
-   cd services/ai_service
-   ```
-
-2. Implement Whisper integration in `routers/speech_to_text.py`:
-   ```python
-   import whisper
-   model = whisper.load_model("base")
-   ```
-
-3. Replace placeholder code with actual Whisper implementation
-
-**Key Files to Modify:**
-- `services/ai_service/routers/speech_to_text.py` (implement Whisper)
-- `services/ai_service/main.py` (ensure router is included)
-
-**Success Criteria:**
-- Speech recognition working for English and Hindi
-- Audio processing time < 30 seconds
-- API endpoint responding correctly
-
----
-
-## 📊 COMPLETE TASK TIMELINE (33 HOURS)
-
-| Priority | Task | Day | Hours | Status | Description |
-|----------|------|-----|-------|--------|-------------|
-| 🔴 Critical | Speech-to-Text API Implementation | 1-2 | 4 | Not Started | Implement Whisper in FastAPI |
-| 🔴 Critical | OCR API Service Implementation | 3 | 4 | Not Started | Implement PaddleOCR in FastAPI |
-| 🔴 Critical | NLP API Service Implementation | 4 | 4 | Not Started | Implement transformers in FastAPI |
-| 🟡 High | Medical Terms API Service Implementation | 5 | 3 | Not Started | Medical knowledge base |
-| 🟡 High | Authentication & Authorization API | 6 | 3 | Not Started | JWT authentication |
-| 🟡 High | Adverse Event Reporting API | 7 | 3 | Not Started | Event reporting system |
-| 🔴 Critical | Social Media Monitoring API | 8-9 | 4 | Not Started | Real-time data processing |
-| 🔴 Critical | LLM Chatbot API | 10 | 4 | Not Started | Gemini integration |
-| 🟡 High | Analytics & Dashboard API | 11 | 4 | Not Started | Analytics and reporting |
 
 ---
 
@@ -208,7 +154,7 @@ services/ai_service/
 
 ---
 
-## 🎯 DETAILED TASK BREAKDOWN
+## TASKS (No Time Constraints)
 
 ### Phase 1: Critical Enhancements (Days 1-4, 12 hours)
 
@@ -261,102 +207,400 @@ services/ai_service/
 
 ---
 
-#### Task 1.2: OCR API Service Implementation
-**Priority:** Critical | **Deadline:** Day 3 | **Estimated Hours:** 4
+#### Speech-to-Text API Implementation (Comprehensive)
 
-**Description:** Implement functional OCR API service using PaddleOCR.
+**Use Case:**  
+*A healthcare worker uploads a patient’s audio report in Hindi or English. The system transcribes it and displays the text for review and further action. Handles noisy audio, unsupported formats, and long files gracefully.*
 
-**Requirements:**
-- Implement PaddleOCR integration in FastAPI router
-- Add support for medical document processing
-- Create image preprocessing pipeline with database storage
-- Add multi-language text extraction
-- Implement job tracking and status monitoring
+**Frontend Flow:**  
+- User clicks “Upload Audio” and selects a `.wav` or `.mp3` file.
+- Frontend calls `POST /api/v1/speech/transcribe`.
+- Shows “Processing…” until job is done.
+- Displays transcribed text or error.
 
-**Technical Specifications:**
-```python
-# Already in requirements.txt:
-- paddleocr==2.7.0.3
-- opencv-python-headless==4.6.0.66
-- Pillow==10.3.0
-- sqlalchemy==2.0.23
+**API Endpoints:**
+- `POST /api/v1/speech/transcribe` — Upload and transcribe audio
+- `GET /api/v1/speech/jobs/{job_id}` — Get processing status/result
+- `GET /api/v1/speech/history` — Get user’s transcription history
+- `DELETE /api/v1/speech/jobs/{job_id}` — Cancel processing job
+
+**Sample Input (Frontend):**
+```js
+const formData = new FormData();
+formData.append('audio_file', file);
+await fetch('/api/v1/speech/transcribe', { method: 'POST', body: formData });
 ```
 
-**API Endpoints to Implement:**
-- `POST /api/v1/ocr/extract` - Upload and extract text from images
-- `GET /api/v1/ocr/jobs/{job_id}` - Get processing status
-- `GET /api/v1/ocr/history` - Get user's OCR history
-- `DELETE /api/v1/ocr/jobs/{job_id}` - Cancel processing job
+**Sample API Request (curl):**
+```bash
+curl -X POST "http://localhost:8000/api/v1/speech/transcribe" \
+  -H "Content-Type: multipart/form-data" \
+  -F "audio_file=@patient_report_hindi.wav"
+```
 
-**Changes to Existing Files:**
-- Implement `services/ai_service/routers/ocr.py` (replace placeholder)
-- Add database models for ImageFile and ProcessingJob
-- Create medical document preprocessing
-- Add job tracking and status monitoring
+**Expected Output (Success):**
+```json
+{
+  "job_id": "abc123",
+  "status": "processing",
+  "message": "Transcription started. Check status at /api/v1/speech/jobs/abc123"
+}
+```
 
-**Deliverables:**
-- Functional OCR API endpoints
-- Database storage for image files and extracted text
-- Job tracking and status monitoring
-- Multi-language text recognition
+**Expected Output (Invalid File):**
+```json
+{
+  "detail": "Invalid file type. Please upload a .wav or .mp3 file."
+}
+```
 
-**Acceptance Criteria:**
-- OCR working for medical documents
-- Text extraction accuracy > 85%
-- Processing time < 10 seconds per image
-- Database storage and retrieval working
-- Job status tracking functional
+**Expected Output (Audio Too Long):**
+```json
+{
+  "detail": "Audio file too large or too long. Max 2 minutes allowed."
+}
+```
+
+**Sample Code (FastAPI, with robust error handling and multiple algorithms):**
+```python
+from fastapi import APIRouter, UploadFile, File, BackgroundTasks, HTTPException
+from typing import Optional
+import os
+import magic  # python-magic for MIME type checking
+# import whisper  # OpenAI Whisper
+# import speech_recognition as sr  # Alternative: SpeechRecognition + Google API
+
+router = APIRouter(prefix="/api/v1/speech", tags=["Speech-to-Text"])
+
+ALLOWED_EXTENSIONS = {'.wav', '.mp3'}
+MAX_FILE_SIZE_MB = 10
+MAX_DURATION_SEC = 120
+
+@router.post("/transcribe")
+async def transcribe_audio(audio_file: UploadFile = File(...), background_tasks: BackgroundTasks = None):
+    # Validate file extension
+    ext = os.path.splitext(audio_file.filename)[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Invalid file type. Please upload a .wav or .mp3 file.")
+    # Validate file size
+    contents = await audio_file.read()
+    if len(contents) > MAX_FILE_SIZE_MB * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Audio file too large or too long. Max 2 minutes allowed.")
+    # Optionally check duration (requires decoding audio header)
+    # ... (code to check duration, raise 413 if too long)
+    # Save file
+    file_location = f"uploads/{audio_file.filename}"
+    with open(file_location, "wb") as f:
+        f.write(contents)
+    # Create a processing job in DB (pseudo-code)
+    job_id = create_processing_job(file_location)
+    # Start background transcription
+    background_tasks.add_task(process_audio, file_location, job_id)
+    return {"job_id": job_id, "status": "processing", "message": f"Transcription started. Check status at /api/v1/speech/jobs/{job_id}"}
+
+# --- Algorithm/model call (multiple options) ---
+def process_audio(file_location, job_id):
+    try:
+        # Option 1: OpenAI Whisper (best for multi-language, noisy audio)
+        # model = whisper.load_model("base")
+        # result = model.transcribe(file_location)
+        # transcription = result["text"]
+
+        # Option 2: SpeechRecognition + Google API (fallback)
+        # r = sr.Recognizer()
+        # with sr.AudioFile(file_location) as source:
+        #     audio = r.record(source)
+        # transcription = r.recognize_google(audio, language="en-IN")
+
+        # Save result to DB (pseudo-code)
+        save_transcription(job_id, transcription)
+    except Exception as e:
+        save_transcription_error(job_id, str(e))
+# --- End algorithm/model call ---
+
+@router.get("/jobs/{job_id}")
+async def get_job_status(job_id: str):
+    job = get_processing_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found.")
+    if job.status == "error":
+        return {"job_id": job_id, "status": "error", "error": job.error}
+    return {"job_id": job_id, "status": job.status, "result": job.result}
+```
+
+**Edge Cases & Error Handling:**
+- Invalid file type/extension
+- File too large or too long
+- Corrupted or unreadable audio
+- Model/algorithm error (e.g., Whisper or Google API fails)
+- Job not found
+- User cancels job
+
+**Extensibility:**
+- Add more models (e.g., Azure, AWS Transcribe) as needed
+- Add language detection and auto-switching
+- Store audio/transcription in cloud for scalability
 
 ---
 
-#### Task 1.3: NLP API Service Implementation
-**Priority:** Critical | **Deadline:** Day 4 | **Estimated Hours:** 4
+#### OCR API Service Implementation (Comprehensive)
 
-**Description:** Implement functional NLP API service for medical text analysis.
+**Use Case:**  
+*A hospital staff member uploads a scanned prescription or medical report image. The system extracts the text for digital record-keeping and further analysis. Handles blurry images, unsupported formats, and large files gracefully.*
 
-**Requirements:**
-- Implement medical text classification and analysis
-- Add support for Indian languages
-- Create medical entity recognition
-- Add sentiment analysis for adverse events
-- Implement job tracking and result storage
+**Frontend Flow:**  
+- User clicks “Upload Document” and selects a `.jpg`, `.png`, or `.pdf` file.
+- Frontend calls `POST /api/v1/ocr/extract`.
+- Shows “Processing…” until job is done.
+- Displays extracted text or error.
 
-**Technical Specifications:**
-```python
-# Already in requirements.txt:
-- transformers==4.48.0
-- spacy==3.7.2
-- nltk==3.8.1
-- scikit-learn==1.3.2
-- sqlalchemy==2.0.23
+**API Endpoints:**
+- `POST /api/v1/ocr/extract` — Upload and extract text from images
+- `GET /api/v1/ocr/jobs/{job_id}` — Get processing status/result
+- `GET /api/v1/ocr/history` — Get user’s OCR history
+- `DELETE /api/v1/ocr/jobs/{job_id}` — Cancel processing job
+
+**Sample Input (Frontend):**
+```js
+const formData = new FormData();
+formData.append('image_file', file);
+await fetch('/api/v1/ocr/extract', { method: 'POST', body: formData });
 ```
 
-**API Endpoints to Implement:**
-- `POST /api/v1/nlp/analyze` - Analyze medical text
-- `POST /api/v1/nlp/classify` - Classify adverse events
-- `POST /api/v1/nlp/entities` - Extract medical entities
-- `POST /api/v1/nlp/sentiment` - Analyze sentiment
-- `GET /api/v1/nlp/jobs/{job_id}` - Get processing status
-- `GET /api/v1/nlp/history` - Get analysis history
+**Sample API Request (curl):**
+```bash
+curl -X POST "http://localhost:8000/api/v1/ocr/extract" \
+  -H "Content-Type: multipart/form-data" \
+  -F "image_file=@prescription.jpg"
+```
 
-**Changes to Existing Files:**
-- Implement `services/ai_service/routers/nlp.py` (replace placeholder)
-- Add database models for ProcessingJob and analysis results
-- Create medical text preprocessing
-- Add job tracking and result storage
+**Expected Output (Success):**
+```json
+{
+  "job_id": "ocr456",
+  "status": "processing",
+  "message": "OCR started. Check status at /api/v1/ocr/jobs/ocr456"
+}
+```
 
-**Deliverables:**
-- Functional NLP API endpoints
-- Database storage for analysis results
-- Job tracking and status monitoring
-- Medical text classification and entity recognition
+**Expected Output (Invalid File):**
+```json
+{
+  "detail": "Invalid file type. Please upload a .jpg, .png, or .pdf file."
+}
+```
 
-**Acceptance Criteria:**
-- Medical text classification working
-- Entity recognition accuracy > 80%
-- Support for 3+ Indian languages
-- Database storage and retrieval working
-- Job status tracking functional
+**Expected Output (Image Too Large):**
+```json
+{
+  "detail": "Image file too large. Max 5MB allowed."
+}
+```
+
+**Sample Code (FastAPI, with robust error handling and multiple algorithms):**
+```python
+from fastapi import APIRouter, UploadFile, File, BackgroundTasks, HTTPException
+import os
+import magic
+# from paddleocr import PaddleOCR  # PaddleOCR
+# import pytesseract  # Tesseract OCR (alternative)
+
+router = APIRouter(prefix="/api/v1/ocr", tags=["OCR"])
+
+ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.pdf'}
+MAX_FILE_SIZE_MB = 5
+
+@router.post("/extract")
+async def extract_text(image_file: UploadFile = File(...), background_tasks: BackgroundTasks = None):
+    ext = os.path.splitext(image_file.filename)[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Invalid file type. Please upload a .jpg, .png, or .pdf file.")
+    contents = await image_file.read()
+    if len(contents) > MAX_FILE_SIZE_MB * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Image file too large. Max 5MB allowed.")
+    # Optionally check image quality (blur, resolution)
+    # ... (code to check quality, raise 422 if too blurry)
+    file_location = f"uploads/{image_file.filename}"
+    with open(file_location, "wb") as f:
+        f.write(contents)
+    job_id = create_ocr_job(file_location)
+    background_tasks.add_task(process_ocr, file_location, job_id)
+    return {"job_id": job_id, "status": "processing", "message": f"OCR started. Check status at /api/v1/ocr/jobs/{job_id}"}
+
+# --- Algorithm/model call (multiple options) ---
+def process_ocr(file_location, job_id):
+    try:
+        # Option 1: PaddleOCR (best for multi-language, medical docs)
+        # ocr_model = PaddleOCR()
+        # result = ocr_model.ocr(file_location)
+        # extracted_text = result[0][1][0] if result else ""
+
+        # Option 2: Tesseract (fallback, open-source)
+        # extracted_text = pytesseract.image_to_string(file_location)
+
+        save_ocr_result(job_id, extracted_text)
+    except Exception as e:
+        save_ocr_error(job_id, str(e))
+# --- End algorithm/model call ---
+
+@router.get("/jobs/{job_id}")
+async def get_ocr_job_status(job_id: str):
+    job = get_ocr_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found.")
+    if job.status == "error":
+        return {"job_id": job_id, "status": "error", "error": job.error}
+    return {"job_id": job_id, "status": job.status, "result": job.result}
+```
+
+**Edge Cases & Error Handling:**
+- Invalid file type/extension
+- File too large
+- Blurry or low-quality image
+- Model/algorithm error (PaddleOCR/Tesseract fails)
+- Job not found
+- User cancels job
+
+**Extensibility:**
+- Add more OCR engines (Google Vision, AWS Textract)
+- Add pre-processing (deskew, denoise, contrast enhance)
+- Store images/results in cloud for scalability
+
+---
+
+#### NLP API Service Implementation (Comprehensive)
+
+**Use Case:**  
+*A regulatory reviewer pastes a medical device incident description. The system classifies the event, extracts medical entities, and analyzes sentiment for risk assessment. Handles empty, unsupported, or ambiguous text gracefully.*
+
+**Frontend Flow:**  
+- User enters or pastes text into a form (e.g., "Describe the adverse event").
+- Frontend calls `POST /api/v1/nlp/analyze` (or `/classify`, `/entities`, `/sentiment` as needed).
+- Shows “Analyzing…” until job is done.
+- Displays classification, entities, and sentiment results or error.
+
+**API Endpoints:**
+- `POST /api/v1/nlp/analyze` — Analyze medical text (all-in-one)
+- `POST /api/v1/nlp/classify` — Classify adverse events
+- `POST /api/v1/nlp/entities` — Extract medical entities
+- `POST /api/v1/nlp/sentiment` — Analyze sentiment
+- `GET /api/v1/nlp/jobs/{job_id}` — Get processing status/result
+- `GET /api/v1/nlp/history` — Get analysis history
+
+**Sample Input (Frontend):**
+```js
+const response = await fetch('/api/v1/nlp/analyze', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ text: 'Patient experienced device malfunction and fever.' })
+});
+```
+
+**Sample API Request (curl):**
+```bash
+curl -X POST "http://localhost:8000/api/v1/nlp/analyze" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Patient experienced device malfunction and fever."}'
+```
+
+**Expected Output (Success):**
+```json
+{
+  "job_id": "nlp789",
+  "status": "processing",
+  "message": "NLP analysis started. Check status at /api/v1/nlp/jobs/nlp789"
+}
+```
+
+**Expected Output (Empty Text):**
+```json
+{
+  "detail": "Please enter a valid description."
+}
+```
+
+**Expected Output (Unsupported Language):**
+```json
+{
+  "detail": "Language not supported for analysis."
+}
+```
+
+**Sample Code (FastAPI, with robust error handling and multiple algorithms):**
+```python
+from fastapi import APIRouter, BackgroundTasks, HTTPException
+from pydantic import BaseModel
+from typing import Optional
+# from transformers import pipeline  # HuggingFace Transformers
+# import spacy  # spaCy for NER
+# import nltk  # NLTK for sentiment
+
+router = APIRouter(prefix="/api/v1/nlp", tags=["NLP"])
+
+SUPPORTED_LANGUAGES = {"en", "hi"}
+
+class TextInput(BaseModel):
+    text: str
+    language: Optional[str] = "en"
+
+@router.post("/analyze")
+async def analyze_text(input: TextInput, background_tasks: BackgroundTasks = None):
+    if not input.text or len(input.text.strip()) < 5:
+        raise HTTPException(status_code=400, detail="Please enter a valid description.")
+    if input.language not in SUPPORTED_LANGUAGES:
+        raise HTTPException(status_code=422, detail="Language not supported for analysis.")
+    job_id = create_nlp_job(input.text, input.language)
+    background_tasks.add_task(process_nlp, input.text, input.language, job_id)
+    return {"job_id": job_id, "status": "processing", "message": f"NLP analysis started. Check status at /api/v1/nlp/jobs/{job_id}"}
+
+# --- Algorithm/model call (multiple options) ---
+def process_nlp(text, language, job_id):
+    try:
+        # Option 1: Transformers for classification
+        # classifier = pipeline('text-classification', model='distilbert-base-uncased')
+        # classification = classifier(text)[0]['label']
+
+        # Option 2: spaCy for NER
+        # nlp = spacy.load('en_core_web_sm')
+        # doc = nlp(text)
+        # entities = [ent.text for ent in doc.ents]
+
+        # Option 3: NLTK for sentiment
+        # from nltk.sentiment import SentimentIntensityAnalyzer
+        # sia = SentimentIntensityAnalyzer()
+        # sentiment = sia.polarity_scores(text)['compound']
+
+        # Save result to DB (pseudo-code)
+        save_nlp_result(job_id, {
+            "classification": classification,
+            "entities": entities,
+            "sentiment": sentiment
+        })
+    except Exception as e:
+        save_nlp_error(job_id, str(e))
+# --- End algorithm/model call ---
+
+@router.get("/jobs/{job_id}")
+async def get_nlp_job_status(job_id: str):
+    job = get_nlp_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found.")
+    if job.status == "error":
+        return {"job_id": job_id, "status": "error", "error": job.error}
+    return {"job_id": job_id, "status": job.status, "result": job.result}
+```
+
+**Edge Cases & Error Handling:**
+- Empty or too short text
+- Unsupported language
+- Model/algorithm error (Transformers, spaCy, NLTK fails)
+- Job not found
+- User cancels job
+
+**Extensibility:**
+- Add more models (custom medical NER, multilingual support)
+- Add advanced pre-processing (spellcheck, translation)
+- Store results in cloud for analytics
 
 ---
 
@@ -398,6 +642,134 @@ services/ai_service/
 - MvPI knowledge base integrated
 - Classification accuracy > 90%
 - Database storage and retrieval working
+
+---
+
+#### Medical Terms API Service Implementation (Comprehensive)
+
+**Use Case:**  
+*A user searches for medical device terms, validates terminology, or classifies a device. The system supports typo-tolerance, synonyms, and MvPI-specific knowledge. Handles invalid queries, ambiguous terms, and unsupported categories.*
+
+**Frontend Flow:**  
+- User enters a term or selects a device category.
+- Frontend calls `GET /api/v1/medical/terms` or `POST /api/v1/medical/terms/search`.
+- Shows results, suggestions, or error messages.
+
+**API Endpoints:**
+- `GET /api/v1/medical/terms` — List all medical terms
+- `POST /api/v1/medical/terms/search` — Search for a term (fuzzy, typo-tolerant)
+- `POST /api/v1/medical/terms/classify` — Classify a term
+- `GET /api/v1/medical/devices` — List device categories
+- `POST /api/v1/medical/devices/classify` — Classify a device
+
+**Sample Input (Frontend):**
+```js
+const response = await fetch('/api/v1/medical/terms/search', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ query: 'pacemakr' }) // typo intended
+});
+```
+
+**Sample API Request (curl):**
+```bash
+curl -X POST "http://localhost:8000/api/v1/medical/terms/search" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "pacemakr"}'
+```
+
+**Expected Output (Success, Fuzzy Match):**
+```json
+{
+  "matches": [
+    { "term": "pacemaker", "synonyms": ["cardiac pacemaker"], "category": "device" }
+  ],
+  "suggestions": ["pacemaker"]
+}
+```
+
+**Expected Output (No Match):**
+```json
+{
+  "matches": [],
+  "suggestions": ["Did you mean: pacemaker?"]
+}
+```
+
+**Sample Code (FastAPI, robust error handling, multiple algorithms):**
+```python
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from typing import List, Optional
+# from fuzzywuzzy import process as fuzzy_process  # Fuzzy matching
+# import difflib  # Alternative for close matches
+
+router = APIRouter(prefix="/api/v1/medical", tags=["Medical Terms"])
+
+class SearchRequest(BaseModel):
+    query: str
+
+class ClassifyRequest(BaseModel):
+    term: str
+
+@router.get("/terms")
+async def get_terms():
+    # Fetch all terms from DB (pseudo-code)
+    terms = get_all_medical_terms()
+    return {"terms": terms}
+
+@router.post("/terms/search")
+async def search_terms(request: SearchRequest):
+    if not request.query or len(request.query.strip()) < 2:
+        raise HTTPException(status_code=400, detail="Please enter a valid search term.")
+    # Option 1: FuzzyWuzzy for typo-tolerance
+    # matches = fuzzy_process.extract(request.query, get_all_term_names(), limit=5)
+    # Option 2: difflib for close matches
+    # matches = difflib.get_close_matches(request.query, get_all_term_names(), n=5)
+    # Option 3: Exact match fallback
+    # matches = [t for t in get_all_term_names() if t == request.query]
+    if not matches:
+        return {"matches": [], "suggestions": [f"Did you mean: {suggested_term}?"]}
+    # Fetch full term info for matches
+    results = [get_term_info(m) for m in matches]
+    return {"matches": results, "suggestions": [m for m in matches]}
+
+@router.post("/terms/classify")
+async def classify_term(request: ClassifyRequest):
+    if not request.term or len(request.term.strip()) < 2:
+        raise HTTPException(status_code=400, detail="Please enter a valid term to classify.")
+    # Option 1: Rule-based classification
+    # category = classify_by_rules(request.term)
+    # Option 2: ML model (if available)
+    # category = ml_model.predict(request.term)
+    if not category:
+        raise HTTPException(status_code=404, detail="Term could not be classified.")
+    return {"term": request.term, "category": category}
+
+@router.get("/devices")
+async def get_devices():
+    # Fetch all device categories from DB
+    categories = get_all_device_categories()
+    return {"categories": categories}
+
+@router.post("/devices/classify")
+async def classify_device(request: ClassifyRequest):
+    # Similar logic as classify_term
+    # ...
+    return {"device": request.term, "category": "device_category_here"}
+```
+
+**Edge Cases & Error Handling:**
+- Empty or too short query/term
+- No matches found (suggest alternatives)
+- Ambiguous term (return all possible matches)
+- Term not in knowledge base
+- DB or model error
+
+**Extensibility:**
+- Add synonym/ontology expansion (UMLS, SNOMED)
+- Integrate with external medical term APIs
+- Add ML-based classification for new device types
 
 ---
 
@@ -847,4 +1219,4 @@ curl -X GET "http://localhost:8000/api/v1/analytics/overview" \
 
 ---
 
-*This comprehensive guide is optimized for the 33-hour constraint and focuses on implementing the existing FastAPI service structure with complete database integration for the Medical Device Adverse Event Reporting System.* 
+*This comprehensive guide focuses on implementing the existing FastAPI service structure with complete database integration for the Medical Device Adverse Event Reporting System.* 
