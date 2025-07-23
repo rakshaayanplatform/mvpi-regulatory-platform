@@ -14,7 +14,7 @@ class User(AbstractUser):
         ("admin", "System Administrator"),
     ]
     user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES)
-    phone_number = models.CharField(max_length=15, unique=True)
+    phone_number = models.CharField(max_length=15, unique=True, blank=True, null=True)
     is_phone_verified = models.BooleanField(default=False)
     organization_name = models.CharField(max_length=200, blank=True)
     designation = models.CharField(max_length=100, blank=True)
@@ -66,13 +66,18 @@ class UserRole(models.Model):
         return f"{self.user.username} - {self.role.name}"
 
 
+
+
 class OTP(models.Model):
     OTP_PURPOSE_CHOICES = [
         ("verify", "Phone Verification"),
         ("reset", "Password Reset"),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        "User", on_delete=models.CASCADE, null=True, blank=True
+    )  # Optional link to user
+    phone_number = models.CharField(max_length=15)  # Always required
     otp_code = models.CharField(max_length=6)
     purpose = models.CharField(max_length=20, choices=OTP_PURPOSE_CHOICES)
     is_used = models.BooleanField(default=False)
@@ -81,12 +86,19 @@ class OTP(models.Model):
 
     class Meta:
         db_table = "auth_otps"
+        indexes = [
+            models.Index(fields=["phone_number", "otp_code", "purpose"]),
+        ]
+        ordering = ["-created_at"]
 
     def is_expired(self):
+        """Check if OTP is expired."""
         return timezone.now() >= self.expires_at
 
     def __str__(self):
-        return f"OTP ({self.purpose}) for {self.user.username}"
+        return f"OTP {self.otp_code} for {self.phone_number} ({self.purpose})"
+
+
 
 
 class AuditLog(models.Model):
