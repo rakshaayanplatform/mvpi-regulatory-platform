@@ -139,6 +139,7 @@ def change_password(request):
             )
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def request_otp(request):
@@ -146,27 +147,34 @@ def request_otp(request):
     serializer = PasswordResetRequestSerializer(data=request.data)
     if serializer.is_valid():
         phone_number = serializer.validated_data["phone_number"]
+        otp_code = str(random.randint(100000, 999999))
+
+        print(f"\n[DEBUG] PHONE VERIFICATION OTP for {phone_number}: {otp_code}\n")
+
         try:
             user = User.objects.get(phone_number=phone_number)
-            otp_code = str(random.randint(100000, 999999))
-            print(f"\n[DEBUG] PHONE VERIFICATION OTP for {phone_number}: {otp_code}\n")
-            OTP.objects.create(
-                user=user,
-                otp_code=otp_code,
-                purpose="phone_verification",
-                expires_at=timezone.now() + timedelta(minutes=10),
-                is_used=False
-            )
-            return Response(
-                {"message": "OTP sent successfully (check terminal output)"},
-                status=status.HTTP_200_OK
-            )
         except User.DoesNotExist:
-            return Response(
-                {"error": "User not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            # Optionally, create a dummy user or log it silently
+            user = None
+
+        OTP.objects.create(
+    user=user,
+    otp_code=otp_code,
+    phone_number=phone_number,
+    purpose="verify",  # ✅ change from "phone_verification" to "verify"
+    expires_at=timezone.now() + timedelta(minutes=10),
+    is_used=False
+)
+
+
+        # Send success message regardless of user existence
+        return Response(
+            {"message": "OTP sent successfully (check terminal output)"},
+            status=status.HTTP_200_OK
+        )
+
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -181,36 +189,28 @@ def verify_otp(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    try:
-        user = User.objects.get(phone_number=phone_number)
-        otp = OTP.objects.filter(
-            user=user,
-            otp_code=otp_code,
-            purpose="phone_verification",
-            is_used=False,
-            expires_at__gt=timezone.now()
-        ).first()
+    otp = OTP.objects.filter(
+        phone_number=phone_number,
+        otp_code=otp_code,
+        purpose="verify",  # FIXED: this must match the model choice
+        is_used=False,
+        expires_at__gt=timezone.now()
+    ).first()
 
-        if otp:
-            otp.is_used = True
-            otp.save()
-            user.is_phone_verified = True
-            user.save()
-
-            return Response(
-                {"message": "Phone verified successfully"},
-                status=status.HTTP_200_OK
-            )
-        else:
-            return Response(
-                {"error": "Invalid or expired OTP"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-    except User.DoesNotExist:
+    if otp:
+        otp.is_used = True
+        otp.save()
         return Response(
-            {"error": "User not found"},
-            status=status.HTTP_404_NOT_FOUND
+            {"message": "OTP verified successfully. Proceed to register."},
+            status=status.HTTP_200_OK
         )
+
+    return Response(
+        {"error": "Invalid or expired OTP"},
+        status=status.HTTP_400_BAD_REQUEST
+    )
+
+
 
 # ✅ Password Reset OTP Request
 @api_view(["POST"])
