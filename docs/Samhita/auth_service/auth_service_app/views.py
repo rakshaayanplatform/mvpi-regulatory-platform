@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.conf import settings
 from django.contrib.auth import login, logout
 from django.http import JsonResponse
+from django.db import models
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -22,7 +23,12 @@ from .serializers import (
     PasswordChangeSerializer,
     PasswordResetRequestSerializer,
     PasswordResetConfirmSerializer,
+    AdminUserListSerializer,
+    AdminUserUpdateSerializer,
 )
+from .permissions import IsAdmin
+from django.core.mail import send_mail
+import secrets
 
 # JWT helpers
 def generate_access_token(user):
@@ -58,16 +64,93 @@ def register(request):
         )
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated, IsAdmin])
+def admin_list_users(request):
+    query = request.GET.get("q", "")
+    user_type = request.GET.get("user_type", None)
+    users = User.objects.all()
+    if query:
+        users = users.filter(
+            models.Q(username__icontains=query) |
+            models.Q(email__icontains=query) |
+            models.Q(phone_number__icontains=query)
+        )
+    if user_type:
+        users = users.filter(user_type=user_type)
+    serializer = AdminUserListSerializer(users, many=True)
+    return Response(serializer.data)
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated, IsAdmin])
+def admin_update_user(request, user_id):
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=404)
+    serializer = AdminUserUpdateSerializer(user, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=400)
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated, IsAdmin])
+def admin_deactivate_user(request, user_id):
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=404)
+    user.is_active = False
+    user.save()
+    return Response({"message": "User deactivated"})
+
+# Email verification endpoints
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def send_verification_email(request):
+    user = request.user
+    if user.is_email_verified:
+        return Response({"message": "Email already verified."}, status=200)
+    token = secrets.token_urlsafe(32)
+    user.email_verification_token = token
+    user.save()
+    verification_link = f"http://localhost:8000/email/verify/?email={user.email}&token={token}"
+    send_mail(
+        "Verify your email",
+        f"Click the link to verify your email: {verification_link}",
+        settings.EMAIL_HOST_USER,
+        [user.email],
+        fail_silently=False,
+    )
+    return Response({"message": "Verification email sent."})
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def verify_email(request):
+    email = request.data.get("email")
+    token = request.data.get("token")
+    try:
+        user = User.objects.get(email=email, email_verification_token=token)
+    except User.DoesNotExist:
+        return Response({"error": "Invalid token or email."}, status=400)
+    user.is_email_verified = True
+    user.email_verification_token = None
+    user.save()
+    return Response({"message": "Email verified successfully."})
+
+# Enforce email verification for login
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def login_view(request):
     serializer = UserLoginSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.validated_data["user"]
+        if not user.is_email_verified:
+            return Response({"error": "Email not verified."}, status=403)
         login(request, user)
         access_token = generate_access_token(user)
         refresh_token = generate_refresh_token(user)
-
         response = JsonResponse(
             {
                 "message": "Login successful",
@@ -90,6 +173,14 @@ def login_view(request):
             secure=True,
             samesite="Lax",
             max_age=7 * 24 * 60 * 60,
+        )
+        # CSRF cookie
+        response.set_cookie(
+            key="X-CSRFToken",
+            value=request.META.get("CSRF_COOKIE", secrets.token_urlsafe(16)),
+            httponly=False,
+            secure=True,
+            samesite="Lax",
         )
         return response
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -121,33 +212,24 @@ def update_profile(request):
         )
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def change_password(request):
     serializer = PasswordChangeSerializer(data=request.data)
-    
     if serializer.is_valid():
         user = request.user
-        old_password = serializer.validated_data.get("old_password")
-        new_password = serializer.validated_data.get("new_password")
-
-        if not user.check_password(old_password):
+        if user.check_password(serializer.validated_data["old_password"]):
+            user.set_password(serializer.validated_data["new_password"])
+            user.save()
             return Response(
-                {"error": "Invalid old password"},
-                status=status.HTTP_400_BAD_REQUEST
+                {"message": "Password changed successfully"}, status=status.HTTP_200_OK
             )
-
-        user.set_password(new_password)
-        user.save()
-        return Response(
-            {"message": "Password changed successfully"},
-            status=status.HTTP_200_OK
-        )
-
-    # Debug print if validation fails
-    print("Validation errors:", serializer.errors)
+        else:
+            return Response(
+                {"error": "Invalid old password"}, status=status.HTTP_400_BAD_REQUEST
+            )
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -325,27 +407,3 @@ def audit_logs(request):
     logs = AuditLog.objects.filter(user=request.user).order_by("-created_at")
     serializer = AuditLogSerializer(logs, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
-
-@api_view(["GET"])
-@permission_classes([AllowAny])
-def user_list(request):
-    users = User.objects.all()
-    serializer = UserSerializer(users, many=True)
-    return Response({"users": serializer.data})
-
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def verify_token(request):
-    auth_header = request.headers.get('Authorization', '')
-    if not auth_header.startswith('Bearer '):
-        return Response({'detail': 'Invalid token header'}, status=status.HTTP_401_UNAUTHORIZED)
-
-    token = auth_header.split('Bearer ')[1]
-    try:
-        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=['HS256'])
-        user_id = payload.get('user_id')
-        return Response({'user_id': user_id}, status=status.HTTP_200_OK)
-    except jwt.ExpiredSignatureError:
-        return Response({'detail': 'Token expired'}, status=status.HTTP_401_UNAUTHORIZED)
-    except jwt.InvalidTokenError:
-        return Response({'detail': 'Invalid token'}, status=status.HTTP_401_UNAUTHORIZED)

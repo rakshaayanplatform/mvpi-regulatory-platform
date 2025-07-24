@@ -21,16 +21,22 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     def validate_username(self, value):
         if not re.match(r'^[\w.@+-]+$', value):
             raise serializers.ValidationError("Invalid username format.")
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("Username already exists.")
         return value
 
     def validate_email(self, value):
         if not re.match(r"^[^@]+@[^@]+\.[^@]+$", value):
             raise serializers.ValidationError("Invalid email format.")
+        if User.objects.filter(email=value.lower()).exists():
+            raise serializers.ValidationError("Email already exists.")
         return value.lower()
 
     def validate_phone_number(self, value):
         if not re.match(r"^\+?\d{10,15}$", value):
             raise serializers.ValidationError("Invalid phone number format.")
+        if User.objects.filter(phone_number=value).exists():
+            raise serializers.ValidationError("Phone number already exists.")
         return value
 
     def validate_password(self, value):
@@ -53,8 +59,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             phone_number=validated_data["phone_number"],
             user_type=validated_data["user_type"],
             password=validated_data["password"],
-            is_email_verified=False
         )
+        user.is_email_verified = False
+        user.save()
         return user
 
 class UserLoginSerializer(serializers.Serializer):
@@ -130,11 +137,21 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
             raise serializers.ValidationError("Password must contain a special character.")
         return value
 
-class AdminUserSerializer(serializers.ModelSerializer):
+# Admin user management serializers
+class AdminUserListSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("id", "username", "email", "phone_number", "user_type", "is_active", "is_email_verified", "is_phone_verified")
 
-class EmailVerificationSerializer(serializers.Serializer):
+class AdminUserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("email", "phone_number", "user_type", "is_active")
+
+# Email verification serializers
+class EmailVerificationSendSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    token = serializers.CharField(max_length=64, required=False)
+
+class EmailVerificationConfirmSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    token = serializers.CharField()
