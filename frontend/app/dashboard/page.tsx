@@ -10,36 +10,15 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // ✅ Changed from "userRole" to "user_type" to match signup
-    const storedRole = localStorage.getItem("user_type");
+    // Prefer 'user_type', fallback to 'userRole' for backward compatibility
+    const storedRole = localStorage.getItem("user_type") || localStorage.getItem("userRole");
     if (storedRole) {
       setRole(storedRole);
     }
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      await axios.post(
-        "http://100.97.106.2:8001/logout/",
-        {},
-        {
-          headers: {
-            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyMiwiZXhwIjoxNzUzMzUzMTM1LCJpYXQiOjE3NTMzNTIyMzV9.c6TR5VSSJReCNXrWlwxlruBMw3iIAg6PBE7EalxZ2ig`,
-          },
-        }
-      );
-
-      // ✅ Also remove "user_type" on logout
-      localStorage.removeItem("user_type");
-      localStorage.removeItem("userRole");
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-
-      router.push("/login");
-    } catch (err) {
-      console.error("Logout failed:", err);
-      alert("Logout failed. Try again.");
-    }
+  const handleLogout = () => {
+    router.push("/logout");
   };
 
   const renderDashboardContent = () => {

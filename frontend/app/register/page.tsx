@@ -1,12 +1,30 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import api from "@/utils/axiosInstance";
+
+const COUNTRY_CODES = [
+  { code: "+91", label: "🇮🇳 +91" },
+  { code: "+1", label: "🇺🇸 +1" },
+  { code: "+44", label: "🇬🇧 +44" },
+  { code: "+971", label: "🇦🇪 +971" },
+  // Add more as needed
+];
+
+function formatPhoneNumber(countryCode: string, number: string) {
+  const num = number.trim();
+  if (!/^\d{10}$/.test(num)) {
+    return null;
+  }
+  return countryCode + num;
+}
 
 export default function Signup() {
   const router = useRouter();
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
+  const [countryCode, setCountryCode] = useState(COUNTRY_CODES[0].code);
   const [phone_number, setPhone_number] = useState("");
   const [user_type, setUser_type] = useState("");
   const [otp_code, setOtp_code] = useState("");
@@ -17,75 +35,79 @@ export default function Signup() {
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpSuccess, setOtpSuccess] = useState("");
   const [otpError, setOtpError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [formErrors, setFormErrors] = useState<any>(null);
 
   const handleSendOtp = async () => {
     setOtpError("");
     setOtpSuccess("");
-
-    const response = await fetch("http://100.97.106.2:8001/request-otp/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone_number }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
+    const formattedPhone = formatPhoneNumber(countryCode, phone_number);
+    if (!formattedPhone) {
+      setOtpError("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+    try {
+      await api.post("/request-otp/", { phone_number: formattedPhone });
       setOtpSent(true);
       setOtpSuccess("OTP sent successfully to your mobile.");
-    } else {
-      setOtpError(data.error || data.message || "Failed to send OTP.");
+    } catch (error: any) {
+      setOtpError(error?.response?.data?.error || error?.response?.data?.message || "Failed to send OTP.");
     }
   };
 
   const handleVerifyOtp = async () => {
     setOtpError("");
     setOtpSuccess("");
-
-    const response = await fetch("http://100.97.106.2:8001/verify-otp/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone_number, otp_code }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok && data.verified) {
-      setOtpVerified(true);
-      setOtpSuccess("OTP verified successfully.");
-    } else {
-      setOtpError(data.error || data.message || "Invalid OTP.");
+    const formattedPhone = formatPhoneNumber(countryCode, phone_number);
+    if (!formattedPhone) {
+      setOtpError("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+    try {
+      const response = await api.post("/verify-otp/", { phone_number: formattedPhone, otp_code: otp_code.trim() });
+      if (response.data.message?.includes("OTP verified")) {
+        setOtpVerified(true);
+        setOtpSuccess("OTP verified successfully.");
+      } else {
+        setOtpError("Invalid OTP.");
+      }
+    } catch (error: any) {
+      setOtpError(error?.response?.data?.error || error?.response?.data?.message || "Invalid OTP.");
     }
   };
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-
+    setFormErrors(null);
     if (!otp_code) {
       setOtpError("Please verify OTP before submitting.");
       return;
     }
-
-    const response = await fetch("http://100.97.106.2:8001/register/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username,
-        email,
-        phone_number,
-        user_type,
-        password,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
+    const formattedPhone = formatPhoneNumber(countryCode, phone_number);
+    if (!formattedPhone) {
+      setOtpError("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+    try {
+      await api.post("/register/", {
+        username: username.trim(),
+        email: email.trim(),
+        phone_number: formattedPhone,
+        user_type: user_type.trim(),
+        password: password.trim(),
+      });
       localStorage.setItem("user_type", user_type);
+      setOtp_code("");
+      setOtpError("");
+      setFormErrors(null);
       alert("Registration successful!");
       router.push("/dashboard");
-    } else {
-      alert(data.message || "Registration failed");
+    } catch (error: any) {
+      if (error?.response?.data) {
+        setFormErrors(error.response.data);
+      } else {
+        setFormErrors({general: "Registration failed"});
+      }
     }
   };
 
@@ -170,17 +192,10 @@ export default function Signup() {
           <div className="flex items-end gap-2 flex-wrap md:flex-nowrap">
             <div className="relative flex-grow">
               <label className="block relative cursor-text">
-                <input
-                  type="text"
-                  placeholder="Mobile Number"
-                  className="peer w-full border-b border-gray-400 bg-transparent py-4 placeholder-transparent focus:outline-none focus:border-blue-500"
-                  maxLength={10}
-                  value={phone_number}
-                  onChange={(e) => setPhone_number(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                />
-                <span className="absolute left-0 top-0 text-gray-500 text-sm transition-all peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-0 peer-focus:text-sm peer-focus:text-blue-600">
-                  Mobile Number
-                </span>
+                <select value={countryCode} onChange={e => setCountryCode(e.target.value)} className="border-b border-gray-400 bg-transparent py-4 focus:outline-none focus:border-blue-500">
+                  {COUNTRY_CODES.map(opt => <option key={opt.code} value={opt.code}>{opt.label}</option>)}
+                </select>
+                <input type="text" placeholder="Mobile Number" maxLength={10} value={phone_number} onChange={e => setPhone_number(e.target.value.replace(/\D/g, "").slice(0, 10))} className="peer w-full border-b border-gray-400 bg-transparent py-4 placeholder-transparent focus:outline-none focus:border-blue-500" />
               </label>
             </div>
             <button
@@ -223,15 +238,35 @@ export default function Signup() {
               <div className="relative">
                 <label className="block relative cursor-text">
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="Password"
-                    className="peer w-full border-b border-gray-400 bg-transparent py-4 placeholder-transparent focus:outline-none focus:border-blue-500"
+                    className="peer w-full border-b border-gray-400 bg-transparent py-4 placeholder-transparent focus:outline-none focus:border-blue-500 pr-10"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
                   <span className="absolute left-0 top-0 text-gray-500 text-sm transition-all peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-0 peer-focus:text-sm peer-focus:text-blue-600">
                     Password (min 6 characters)
                   </span>
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      // Eye open SVG
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-7.5 9.75-7.5 9.75 7.5 9.75 7.5-3.75 7.5-9.75 7.5S2.25 12 2.25 12z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                      </svg>
+                    ) : (
+                      // Eye closed SVG
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 002.25 12s3.75 7.5 9.75 7.5c1.956 0 3.74-.5 5.272-1.272M6.228 6.228A10.45 10.45 0 0112 4.5c6 0 9.75 7.5 9.75 7.5a17.896 17.896 0 01-3.478 4.752M6.228 6.228l11.544 11.544M6.228 6.228L3 3m15.75 15.75L21 21" />
+                      </svg>
+                    )}
+                  </button>
                 </label>
               </div>
             </>
@@ -239,6 +274,15 @@ export default function Signup() {
 
           {otpError && <p className="text-red-500 text-sm mb-1">{otpError}</p>}
           {otpSuccess && <p className="text-green-600 text-sm mb-1">{otpSuccess}</p>}
+          {formErrors && (
+            <div className="text-red-600 text-sm mb-2">
+              {typeof formErrors === "string"
+                ? formErrors
+                : Object.entries(formErrors).map(([field, msg]) => (
+                    <div key={field}>{field}: {Array.isArray(msg) ? msg.join(", ") : String(msg)}</div>
+                  ))}
+            </div>
+          )}
 
           <div className="flex justify-between items-center">
             <label className="flex gap-2 text-sm">
