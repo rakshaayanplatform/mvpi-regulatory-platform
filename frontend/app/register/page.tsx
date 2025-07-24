@@ -120,11 +120,12 @@ export default function Signup() {
         onChange={(e) => setUser_type(e.target.value)}
         className="border p-2 w-full"
       >
-        <option value="doctor">Doctor</option>
         <option value="patient">Patient</option>
+        <option value="hospital">Hospital Staff</option>
         <option value="manufacturer">Manufacturer</option>
-        <option value="hospital_staff">Hospital Staff</option>
-        <option value="media">Media</option>
+        <option value="government">Government</option>
+        <option value="coordinator">MDMC Coordinator</option>
+        <option value="admin">System Administrator</option>
       </select>
 
       <button

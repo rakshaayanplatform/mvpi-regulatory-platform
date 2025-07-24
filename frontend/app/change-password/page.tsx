@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
@@ -12,7 +12,6 @@ export default function ChangePasswordPage() {
     new_password: "",
   });
 
-  const [token, setToken] = useState(""); // Manually entered token
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -20,19 +19,10 @@ export default function ChangePasswordPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleTokenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setToken(e.target.value);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess("");
-
-    if (!token.trim()) {
-      setError("Please enter a valid Bearer token.");
-      return;
-    }
 
     try {
       const response = await axios.post(
@@ -40,23 +30,34 @@ export default function ChangePasswordPage() {
         form,
         {
           headers: {
-            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo3LCJleHAiOjE3NTMyNzYwNjEsImlhdCI6MTc1MzI3NTE2MX0.FQWr6OAYhbqQYRgStv5mws2_Q9ZT-4Lr5r2AzRhZM-E`,
+            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo3LCJleHAiOjE3NTMzMzI4NjUsImlhdCI6MTc1MzMzMTk2NX0.8Jf-S5fN38XHEVGGkcSiv2urbrzY3DKU4uLf5SidilA`,
             "Content-Type": "application/json",
           },
         }
       );
 
-      console.log("Password changed:", response.data);
+      console.log("✅ Password changed:", response.data);
       setSuccess("Password changed successfully!");
-      setTimeout(() => router.push("/profile"), 2000);
+
+      setTimeout(() => {
+        router.push("/profile");
+      }, 2000);
     } catch (err: any) {
-      console.error("Password change failed:", err);
-      if (err.response?.data?.detail) {
-        setError(err.response.data.detail);
-      } else if (err.response?.data?.old_password) {
-        setError(err.response.data.old_password[0]);
+      console.error("❌ Password change failed:", err);
+
+      if (err.response) {
+        const data = err.response.data;
+        if (data.detail) {
+          setError(data.detail);
+        } else if (data.old_password) {
+          setError(data.old_password[0]);
+        } else if (data.new_password) {
+          setError(data.new_password[0]);
+        } else {
+          setError("Something went wrong. Please check your input.");
+        }
       } else {
-        setError("Failed to change password. Please try again.");
+        setError("No response from server. Check your network or token.");
       }
     }
   };
@@ -71,18 +72,6 @@ export default function ChangePasswordPage() {
 
         {success && <p className="text-green-600 mb-2">{success}</p>}
         {error && <p className="text-red-600 mb-2">{error}</p>}
-
-        <label className="block mb-4">
-          Bearer Token:
-          <input
-            type="text"
-            name="token"
-            value={token}
-            onChange={handleTokenChange}
-            className="w-full mt-1 p-2 border rounded"
-            required
-          />
-        </label>
 
         <label className="block mb-4">
           Old Password:
