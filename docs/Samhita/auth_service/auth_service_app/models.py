@@ -16,6 +16,8 @@ class User(AbstractUser):
     user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES)
     phone_number = models.CharField(max_length=15, unique=True, blank=True, null=True)
     is_phone_verified = models.BooleanField(default=False)
+    is_email_verified = models.BooleanField(default=False)
+    email_verification_token = models.CharField(max_length=64, blank=True, null=True)
     organization_name = models.CharField(max_length=200, blank=True)
     designation = models.CharField(max_length=100, blank=True)
     address = models.TextField(blank=True)

@@ -9,7 +9,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         exclude = ["password"]
-        read_only_fields = ("is_phone_verified", "created_at", "updated_at")
+        read_only_fields = ("is_phone_verified", "is_email_verified", "created_at", "updated_at")
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
@@ -53,6 +53,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             phone_number=validated_data["phone_number"],
             user_type=validated_data["user_type"],
             password=validated_data["password"],
+            is_email_verified=False
         )
         return user
 
@@ -128,3 +129,12 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         if not re.search(r"[^A-Za-z0-9]", value):
             raise serializers.ValidationError("Password must contain a special character.")
         return value
+
+class AdminUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("id", "username", "email", "phone_number", "user_type", "is_active", "is_email_verified", "is_phone_verified")
+
+class EmailVerificationSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    token = serializers.CharField(max_length=64, required=False)

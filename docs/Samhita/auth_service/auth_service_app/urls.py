@@ -15,4 +15,9 @@ urlpatterns = [
     path('user-roles/', views.user_roles, name='auth-user-roles'),
     path('assign-role/', views.assign_role, name='auth-assign-role'),
     path('audit-logs/', views.audit_logs, name='auth-audit-logs'),
+    path('admin/users/', views.admin_list_users, name='admin-list-users'),
+    path('admin/users/<int:user_id>/', views.admin_update_user, name='admin-update-user'),
+    path('admin/users/<int:user_id>/deactivate/', views.admin_deactivate_user, name='admin-deactivate-user'),
+    path('email/send-verification/', views.send_verification_email, name='send-verification-email'),
+    path('email/verify/', views.verify_email, name='verify-email'),
 ]

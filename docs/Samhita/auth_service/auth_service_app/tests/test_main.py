@@ -86,3 +86,39 @@ class AuthServiceTests(APITestCase):
         self.client.force_authenticate(user=self.admin_user)
         response = self.client.get(self.audit_logs_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_email_verification_flow(self):
+        # Register user
+        self.client.post(self.register_url, self.user_data, format='json')
+        user = User.objects.get(username="john")
+        self.client.force_authenticate(user=user)
+        # Send verification email
+        response = self.client.post(reverse('send-verification-email'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        token = User.objects.get(username="john").email_verification_token
+        # Verify email
+        self.client.logout()
+        response = self.client.post(reverse('verify-email'), {"email": "john@email.com", "token": token}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        user.refresh_from_db()
+        self.assertTrue(user.is_email_verified)
+
+    def test_admin_user_management(self):
+        # Create users of all types
+        user_types = ["patient", "hospital", "manufacturer", "government", "coordinator"]
+        for i, ut in enumerate(user_types):
+            User.objects.create_user(username=f"user{i}", email=f"user{i}@mail.com", phone_number=f"+9112345678{i:02}", password="TestPass123!", user_type=ut)
+        self.client.force_authenticate(user=self.admin_user)
+        # List users
+        response = self.client.get(reverse('admin-list-users'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Search users
+        response = self.client.get(reverse('admin-list-users') + '?q=user')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Update user
+        user = User.objects.get(username="user0")
+        response = self.client.patch(reverse('admin-update-user', args=[user.id]), {"is_active": False}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Deactivate user
+        response = self.client.delete(reverse('admin-deactivate-user', args=[user.id]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
