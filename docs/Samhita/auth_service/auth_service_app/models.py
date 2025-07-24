@@ -1,7 +1,7 @@
-
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 import re
 
 class User(AbstractUser):
@@ -14,7 +14,7 @@ class User(AbstractUser):
         ("admin", "System Administrator"),
     ]
     user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES)
-    phone_number = models.CharField(max_length=15, unique=True)
+    phone_number = models.CharField(max_length=15, unique=True, blank=True, null=True)
     is_phone_verified = models.BooleanField(default=False)
     organization_name = models.CharField(max_length=200, blank=True)
     designation = models.CharField(max_length=100, blank=True)
@@ -32,11 +32,12 @@ class User(AbstractUser):
 
     def clean(self):
         if not re.match(r'^[\w.@+-]+$', self.username):
-            raise ValueError("Invalid username format.")
-        if not re.match(r"^[^@]+@[^@]+\\.[^@]+$", self.email):
-            raise ValueError("Invalid email format.")
-        if not re.match(r"^\\+?\d{10,15}$", self.phone_number):
-            raise ValueError("Invalid phone number format.")
+            raise ValidationError("Invalid username format.")
+        if self.email and not re.match(r"^[^@]+@[^@]+\.[^@]+$", self.email):
+            raise ValidationError("Invalid email format.")
+        if not re.match(r"^\+?\d{10,15}$", self.phone_number):
+            raise ValidationError("Invalid phone number format.")
+
 
 class Role(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -49,6 +50,7 @@ class Role(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class UserRole(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -63,21 +65,41 @@ class UserRole(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.role.name}"
 
+
+
+
 class OTP(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    OTP_PURPOSE_CHOICES = [
+        ("verify", "Phone Verification"),
+        ("reset", "Password Reset"),
+    ]
+
+    user = models.ForeignKey(
+        "User", on_delete=models.CASCADE, null=True, blank=True
+    )  # Optional link to user
+    phone_number = models.CharField(max_length=15)  # Always required
     otp_code = models.CharField(max_length=6)
+    purpose = models.CharField(max_length=20, choices=OTP_PURPOSE_CHOICES)
     is_used = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
 
     class Meta:
         db_table = "auth_otps"
+        indexes = [
+            models.Index(fields=["phone_number", "otp_code", "purpose"]),
+        ]
+        ordering = ["-created_at"]
 
     def is_expired(self):
-        return timezone.now() > self.expires_at
+        """Check if OTP is expired."""
+        return timezone.now() >= self.expires_at
 
     def __str__(self):
-        return f"OTP for {self.user.username}"
+        return f"OTP {self.otp_code} for {self.phone_number} ({self.purpose})"
+
+
+
 
 class AuditLog(models.Model):
     ACTION_CHOICES = [

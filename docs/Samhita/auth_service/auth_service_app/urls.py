@@ -11,6 +11,7 @@ urlpatterns = [
     path('request-otp/', views.request_otp, name='auth-request-otp'),
     path('verify-otp/', views.verify_otp, name='auth-verify-otp'),
     path('reset-password/', views.reset_password, name='auth-reset-password'),
+    path('request-password-reset-otp/', views.request_password_reset_otp, name='auth-request-password-reset-otp'),
     path('user-roles/', views.user_roles, name='auth-user-roles'),
     path('assign-role/', views.assign_role, name='auth-assign-role'),
     path('audit-logs/', views.audit_logs, name='auth-audit-logs'),
