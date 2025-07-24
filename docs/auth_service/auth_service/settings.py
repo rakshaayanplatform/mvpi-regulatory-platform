@@ -142,8 +142,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # REST Framework settings
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.TokenAuthentication",
+        "rest_framework.authentication.BasicAuthentication",
+        "auth_service_app.authentication.JWTAuthentication",   
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
@@ -152,16 +153,18 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 20,
 }
 
+AUTH_USER_MODEL = 'auth_service_app.User'
+
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = True
-
 CORS_ALLOW_CREDENTIALS = True
 
 # JWT settings
-JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "your-jwt-secret-key")
+
+JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "default-key")
 JWT_ALGORITHM = "HS256"
 JWT_ACCESS_TOKEN_LIFETIME = timedelta(
-    minutes=int(os.environ.get("ACCESS_TOKEN_LIFETIME", 15))
+    minutes=int(os.environ.get("ACCESS_TOKEN_LIFETIME", 30))
 )
 JWT_REFRESH_TOKEN_LIFETIME = timedelta(
     minutes=int(os.environ.get("REFRESH_TOKEN_LIFETIME", 10080))
@@ -179,4 +182,5 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "weqy yrmd hvfi uzvb
 
 
 
-AUTH_USER_MODEL = "auth_service_app.User"
+CSRF_TRUSTED_ORIGINS = ["http://localhost:3000"]
+

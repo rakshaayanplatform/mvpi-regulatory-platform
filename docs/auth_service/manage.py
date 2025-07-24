@@ -15,9 +15,9 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
 
-    # Run on port 8001 by default if no args are given
-    if len(sys.argv) == 1:
-        sys.argv += ['runserver', '8001']
+    # Set default port to 8001 if only `runserver` is provided
+    if len(sys.argv) == 2 and sys.argv[1] == "runserver":
+        sys.argv.append("127.0.0.1:8001")
 
     execute_from_command_line(sys.argv)
 
