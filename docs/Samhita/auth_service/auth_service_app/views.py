@@ -121,24 +121,33 @@ def update_profile(request):
         )
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def change_password(request):
     serializer = PasswordChangeSerializer(data=request.data)
+    
     if serializer.is_valid():
         user = request.user
-        if user.check_password(serializer.validated_data["old_password"]):
-            user.set_password(serializer.validated_data["new_password"])
-            user.save()
-            return Response(
-                {"message": "Password changed successfully"}, status=status.HTTP_200_OK
-            )
-        else:
-            return Response(
-                {"error": "Invalid old password"}, status=status.HTTP_400_BAD_REQUEST
-            )
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        old_password = serializer.validated_data.get("old_password")
+        new_password = serializer.validated_data.get("new_password")
 
+        if not user.check_password(old_password):
+            return Response(
+                {"error": "Invalid old password"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.set_password(new_password)
+        user.save()
+        return Response(
+            {"message": "Password changed successfully"},
+            status=status.HTTP_200_OK
+        )
+
+    # Debug print if validation fails
+    print("Validation errors:", serializer.errors)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -316,3 +325,27 @@ def audit_logs(request):
     logs = AuditLog.objects.filter(user=request.user).order_by("-created_at")
     serializer = AuditLogSerializer(logs, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def user_list(request):
+    users = User.objects.all()
+    serializer = UserSerializer(users, many=True)
+    return Response({"users": serializer.data})
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def verify_token(request):
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return Response({'detail': 'Invalid token header'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    token = auth_header.split('Bearer ')[1]
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=['HS256'])
+        user_id = payload.get('user_id')
+        return Response({'user_id': user_id}, status=status.HTTP_200_OK)
+    except jwt.ExpiredSignatureError:
+        return Response({'detail': 'Token expired'}, status=status.HTTP_401_UNAUTHORIZED)
+    except jwt.InvalidTokenError:
+        return Response({'detail': 'Invalid token'}, status=status.HTTP_401_UNAUTHORIZED)

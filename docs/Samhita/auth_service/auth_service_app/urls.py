@@ -1,5 +1,7 @@
 from django.urls import path
 from . import views
+from .views import user_list
+
 
 urlpatterns = [
     path('register/', views.register, name='auth-register'),
@@ -15,4 +17,6 @@ urlpatterns = [
     path('user-roles/', views.user_roles, name='auth-user-roles'),
     path('assign-role/', views.assign_role, name='auth-assign-role'),
     path('audit-logs/', views.audit_logs, name='auth-audit-logs'),
+    path('users/', user_list, name='user-list'),
+    path('verify-token/', views.verify_token),
 ]

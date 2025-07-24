@@ -53,6 +53,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             phone_number=validated_data["phone_number"],
             user_type=validated_data["user_type"],
             password=validated_data["password"],
+            is_email_verified=False,  # <-- ADD THIS LINE
+
         )
         return user
 
@@ -86,11 +88,13 @@ class AuditLogSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ("user", "created_at")
 
+
 class PasswordChangeSerializer(serializers.Serializer):
     old_password = serializers.CharField(write_only=True)
     new_password = serializers.CharField(write_only=True)
 
     def validate_new_password(self, value):
+        # Password strength rules
         if len(value) < 8:
             raise serializers.ValidationError("Password must be at least 8 characters.")
         if not re.search(r"[A-Z]", value):
@@ -99,9 +103,10 @@ class PasswordChangeSerializer(serializers.Serializer):
             raise serializers.ValidationError("Password must contain a lowercase letter.")
         if not re.search(r"\d", value):
             raise serializers.ValidationError("Password must contain a digit.")
-        if not re.search(r"[^A-Za-z0-9]", value):
+        if not re.search(r"[^\w\s]", value):  # special character
             raise serializers.ValidationError("Password must contain a special character.")
         return value
+
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     phone_number = serializers.CharField()
