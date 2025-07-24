@@ -60,12 +60,12 @@ export default function Signup() {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-
+  
     if (!otp_code) {
       setOtpError("Please verify OTP before submitting.");
       return;
     }
-
+  
     const response = await fetch("http://100.97.106.2:8001/register/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -77,16 +77,20 @@ export default function Signup() {
         password,
       }),
     });
-
+  
     const data = await response.json();
-
+  
     if (response.ok) {
+      // ✅ Store user_type in localStorage
+      localStorage.setItem("user_type", user_type);
+      
       alert("Registration successful!");
       router.push("/dashboard");
     } else {
       alert(data.message || "Registration failed");
     }
   };
+  
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -115,18 +119,21 @@ export default function Signup() {
         className="border p-2 w-full"
       />
 
-      <select
-        value={user_type}
-        onChange={(e) => setUser_type(e.target.value)}
-        className="border p-2 w-full"
-      >
-        <option value="patient">Patient</option>
-        <option value="hospital">Hospital Staff</option>
-        <option value="manufacturer">Manufacturer</option>
-        <option value="government">Government</option>
-        <option value="coordinator">MDMC Coordinator</option>
-        <option value="admin">System Administrator</option>
-      </select>
+<select
+  value={user_type}
+  onChange={(e) => setUser_type(e.target.value)}
+  className="border p-2 w-full"
+  required
+>
+  <option value="">Select User Type</option>
+  <option value="patient">Patient</option>
+  <option value="hospital">Hospital Staff</option>
+  <option value="manufacturer">Manufacturer</option>
+  <option value="government_official">Government Official</option>
+  <option value="coordinator">MDMC Coordinator</option>
+  <option value="system_admin">System Administrator</option>
+</select>
+
 
       <button
         type="button"

@@ -1,58 +1,76 @@
 "use client";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import api from "@/utils/axiosInstance";
+import axios from "axios";
 
-export default function UpdateProfilePage() {
-  const router = useRouter();
-  const [form, setForm] = useState({ name: "", email: "" });
+// ✅ Type-safe profile interface
+interface Profile {
+  username: string;
+  email: string;
+  phone_number: string;
+  user_type: string;
+}
+
+// ✅ User type map (flexible and avoids TS7053 error)
+const typeMap: Record<string, string> = {
+  manufacturer: "Manufacturer",
+  coordinator: "MDMC Coordinator",
+  doctor: "Doctor",
+  hospital: "Hospital Admin",
+  patient: "Patient",
+  government: "Government Official",
+};
+
+export default function ViewProfilePage() {
+  const [profile, setProfile] = useState<Profile>({
+    username: "",
+    email: "",
+    phone_number: "",
+    user_type: "",
+  });
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // ✅ Manually set your token here
+  const token =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjozMiwiZXhwIjoxNzUzMzYxNTk3LCJpYXQiOjE3NTMzNjA2OTd9.5DE_7wZRtm9PIWS0aZcvz0wovFz00AyO0e2k_av5Y9k";
 
   useEffect(() => {
     async function fetchProfile() {
       try {
-        const res = await api.get("/profile/");
-        setForm({ name: res.data.name, email: res.data.email });
+        const res = await axios.get("http://100.97.106.2:8001/profile/", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        setProfile({
+          username: res.data.username,
+          email: res.data.email,
+          phone_number: res.data.phone_number,
+          user_type: res.data.user_type,
+        });
+
         setLoading(false);
       } catch (err) {
         setError("Failed to load profile");
         setLoading(false);
       }
     }
+
     fetchProfile();
   }, []);
-
-  async function handleSubmit(e: any) {
-    e.preventDefault();
-    setError("");
-    try {
-      await api.post("/profile/update/", form);
-      router.push("/profile");
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || "Failed to update profile");
-    }
-  }
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Update Profile</h2>
-      <input
-        placeholder="Name"
-        name="name"
-        value={form.name}
-        onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-      /><br/>
-      <input
-        placeholder="Email"
-        name="email"
-        value={form.email}
-        onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-      /><br/>
-      <button type="submit">Update</button>
-    </form>
+    <div className="p-4 bg-white shadow rounded-md max-w-md mx-auto mt-8">
+      <h2 className="text-2xl font-bold mb-4">Your Profile</h2>
+      <p><strong>Name:</strong> {profile.username}</p>
+      <p><strong>Email:</strong> {profile.email}</p>
+      <p><strong>Phone Number:</strong> {profile.phone_number}</p>
+      <p><strong>User Type:</strong> {typeMap[profile.user_type] || profile.user_type}</p>
+    </div>
   );
-} 
+}

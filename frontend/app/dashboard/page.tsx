@@ -10,26 +10,27 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const storedRole = localStorage.getItem("userRole");
+    // ✅ Changed from "userRole" to "user_type" to match signup
+    const storedRole = localStorage.getItem("user_type");
     if (storedRole) {
       setRole(storedRole);
     }
   }, []);
 
   const handleLogout = async () => {
-    const refreshToken = localStorage.getItem("refreshToken");
-
-    if (!refreshToken) {
-      alert("Refresh token missing. Cannot logout.");
-      return;
-    }
-
     try {
-      await axios.post("http://100.97.106.2:8001/logout/", {
-        refresh: refreshToken,
-      });
+      await axios.post(
+        "http://100.97.106.2:8001/logout/",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyMiwiZXhwIjoxNzUzMzUzMTM1LCJpYXQiOjE3NTMzNTIyMzV9.c6TR5VSSJReCNXrWlwxlruBMw3iIAg6PBE7EalxZ2ig`,
+          },
+        }
+      );
 
-      // Clear local storage
+      // ✅ Also remove "user_type" on logout
+      localStorage.removeItem("user_type");
       localStorage.removeItem("userRole");
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
@@ -87,6 +88,39 @@ export default function DashboardPage() {
             </Link>
           </>
         );
+      case "government":
+        return (
+          <>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              Welcome Government Official!
+            </h2>
+            <Link href="/government/oversight" className="btn">
+              Regulatory Oversight
+            </Link>
+          </>
+        );
+      case "coordinator":
+        return (
+          <>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              Welcome MDMC Coordinator!
+            </h2>
+            <Link href="/coordinator/tasks" className="btn">
+              Coordination Tasks
+            </Link>
+          </>
+        );
+      case "admin":
+        return (
+          <>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              Welcome System Administrator!
+            </h2>
+            <Link href="/admin/users" className="btn">
+              User Management
+            </Link>
+          </>
+        );
       default:
         return (
           <h2 className="text-2xl font-bold text-red-600">Invalid role!</h2>
@@ -101,13 +135,23 @@ export default function DashboardPage() {
 
         {role && (
           <div className="flex flex-col gap-4 mt-6">
+            {/* View Profile Button */}
             <Link
               href="/profile"
               className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded"
             >
-              View / Update Profile
+              View Profile
             </Link>
 
+            {/* Update Profile Button */}
+            <Link
+              href="/profile/update"
+              className="bg-yellow-600 hover:bg-yellow-700 text-white py-2 rounded"
+            >
+              Update Profile
+            </Link>
+
+            {/* Change Password Button */}
             <Link
               href="/change-password"
               className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded"
@@ -115,6 +159,7 @@ export default function DashboardPage() {
               Change Password
             </Link>
 
+            {/* Logout Button */}
             <button
               onClick={handleLogout}
               className="bg-red-500 hover:bg-red-600 text-white py-2 rounded"
