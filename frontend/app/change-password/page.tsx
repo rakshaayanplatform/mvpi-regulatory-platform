@@ -25,16 +25,12 @@ export default function ChangePasswordPage() {
     setSuccess("");
 
     try {
-      const response = await axios.post(
-        "http://100.97.106.2:8001/change-password/",
-        form,
-        {
-          headers: {
-            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo3LCJleHAiOjE3NTMzMzI4NjUsImlhdCI6MTc1MzMzMTk2NX0.8Jf-S5fN38XHEVGGkcSiv2urbrzY3DKU4uLf5SidilA`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/change-password/`, form, {
+        headers: {
+          Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo3LCJleHAiOjE3NTMzMzI4NjUsImlhdCI6MTc1MzMzMTk2NX0.8Jf-S5fN38XHEVGGkcSiv2urbrzY3DKU4uLf5SidilA`,
+          "Content-Type": "application/json",
+        },
+      });
 
       console.log("✅ Password changed:", response.data);
       setSuccess("Password changed successfully!");

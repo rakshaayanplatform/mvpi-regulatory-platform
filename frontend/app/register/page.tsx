@@ -22,7 +22,7 @@ export default function Signup() {
     setOtpError("");
     setOtpSuccess("");
 
-    const response = await fetch("http://100.97.106.2:8001/request-otp/", {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/request-otp/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phone_number }),
@@ -42,7 +42,7 @@ export default function Signup() {
     setOtpError("");
     setOtpSuccess("");
 
-    const response = await fetch("http://100.97.106.2:8001/verify-otp/", {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/verify-otp/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phone_number, otp_code }),
@@ -66,7 +66,7 @@ export default function Signup() {
       return;
     }
   
-    const response = await fetch("http://100.97.106.2:8001/register/", {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/register/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

@@ -22,7 +22,7 @@ export default function ProfileUpdatePage() {
   useEffect(() => {
     async function fetchProfile() {
       try {
-        const res = await api.get("http://100.97.106.2:8001/profile/");
+        const res = await api.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/profile/`);
         const data = res.data;
 
         setForm({
@@ -63,7 +63,7 @@ export default function ProfileUpdatePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post("http://100.97.106.2:8001/profile/update/", form);
+      await api.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/profile/update/`, form);
       setSuccess("Profile updated successfully.");
       setTimeout(() => router.push("/profile"), 1500);
     } catch (err) {

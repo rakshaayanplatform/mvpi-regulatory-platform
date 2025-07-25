@@ -24,7 +24,7 @@ export default function ResetPasswordPage() {
     }
     setLoadingOtp(true);
     try {
-      await api.post("http://100.97.106.2:8001/request-password-reset-otp/", {
+      await api.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/request-password-reset-otp/`, {
         phone_number: phone_number, // ✅ correct key
       });
       setOtpSent(true);
@@ -46,7 +46,7 @@ export default function ResetPasswordPage() {
     }
     setLoadingReset(true);
     try {
-      await api.post("http://100.97.106.2:8001/reset-password/", {
+      await api.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/reset-password/`, {
         phone_number: phone_number,       // ✅ corrected key
         otp_code: otp_code,                   // ✅ corrected key
         new_password: new_password,       // ✅ corrected key

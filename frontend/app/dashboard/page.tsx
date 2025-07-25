@@ -19,8 +19,9 @@ export default function DashboardPage() {
 
   const handleLogout = async () => {
     try {
+      const logoutUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/logout/`;
       await axios.post(
-        "http://100.97.106.2:8001/logout/",
+        logoutUrl,
         {},
         {
           headers: {

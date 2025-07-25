@@ -19,7 +19,7 @@ export default function LoginPage() {
     }
 
     try {
-      const response = await fetch("http://100.97.106.2:8001/login/", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/login/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

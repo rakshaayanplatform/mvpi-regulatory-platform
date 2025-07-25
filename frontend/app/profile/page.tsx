@@ -38,7 +38,7 @@ export default function ViewProfilePage() {
   useEffect(() => {
     async function fetchProfile() {
       try {
-        const res = await axios.get("http://100.97.106.2:8001/profile/", {
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/profile/`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
