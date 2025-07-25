@@ -2,8 +2,7 @@
 import { useEffect, useState } from "react";
 import api from "@/utils/axiosInstance";
 import { useRouter } from "next/navigation";
-import api from "@/utils/axiosInstance";
-import { useRouter } from "next/navigation";
+
 
 interface Profile {
   [key: string]: any;
@@ -23,7 +22,6 @@ export default function ViewProfilePage() {
   const [profile, setProfile] = useState<Profile>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const router = useRouter();
   const router = useRouter();
 
   useEffect(() => {
