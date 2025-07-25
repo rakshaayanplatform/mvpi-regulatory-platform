@@ -1,95 +1,111 @@
-"use client";
+import Image from "next/image";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { RefreshCcw, Clock } from "lucide-react";
-import { motion } from "framer-motion";
 
-export default function MaintenancePage() {
-  const router = useRouter();
-  const [showPage, setShowPage] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setShowPage(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
-
+export default function Maintenance() {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-blue-50 p-4 sm:p-6">
-      {showPage && (
-        <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-          className="w-full max-w-[600px] sm:h-[500px] bg-white shadow-md rounded-2xl flex flex-col items-center px-6 sm:px-10 py-12 sm:py-16 gap-6 sm:gap-8"
-        >
-          {/* Logo */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="flex items-center gap-2 sm:gap-3"
-          >
-            <div className="text-blue-600 text-xl sm:text-2xl font-bold">Rakshaayan</div>
-            <div className="text-blue-600 text-lg sm:text-xl">➕</div>
-          </motion.div>
+    <main className="relative flex flex-col min-h-screen overflow-hidden">
+      {/* Background Image */}
+      <div className="absolute inset-0 -z-10">
+        <Image
+          src="/image/MaintenanceBackgroundImage.svg"
+          alt="Background Image"
+          layout="fill"
+          objectFit="cover"
+          objectPosition="center"
+          priority
+        />
+      </div>
 
-          {/* Maintenance Icon */}
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.6, ease: "easeOut", type: "spring", bounce: 0.4 }}
-            className="text-yellow-500 text-5xl sm:text-6xl"
-          >
-            🔧
-          </motion.div>
+      {/* Top Decorative Images */}
+      {/* <div className="absolute top-0 right-0 z-0 overflow-hidden">
+        <img
+          src="/ContactUsTopOval.png"
+          alt="Top Semicircle"
+          className="w-[200px] sm:w-[250px] md:w-[300px]"
+        />
+        <img
+          src="/ContactUsTopCircle.png"
+          alt="Top Line"
+          className="absolute top-[40px] left-[30px] w-[200px] sm:w-[250px] md:w-[300px]"
+        />
+      </div>
 
-          {/* Title + Subtitle */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7, duration: 0.4 }}
-            className="text-center"
-          >
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Under Maintenance</h1>
-            <p className="text-gray-500 mt-1 sm:mt-2 text-sm sm:text-base">
-              We're working to improve your experience
-            </p>
-          </motion.div>
+      {/* Bottom Decorative Images */}
+      {/* <div className="absolute bottom-0 left-0 z-0 overflow-hidden">
+        <img
+          src="/ContactUsBottomOval.png"
+          alt="Bottom Semicircle"
+          className="w-[200px] sm:w-[250px] md:w-[300px]"
+        />
+        <img
+          src="/ContactUsBottomCircle.png"
+          alt="Bottom Line"
+          className="absolute top-[50px] right-[30px] w-[200px] sm:w-[250px] md:w-[300px]"
+        />
+      </div>  */}
 
-          {/* Message */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.9, duration: 0.4 }}
-            className="text-center text-gray-500 px-2 sm:px-4 text-sm sm:text-base leading-relaxed"
-          >
-            We're currently performing scheduled maintenance to improve your experience. Please check back soon.
-          </motion.p>
+      {/* Logo */}
+      
 
-          {/* Estimated Time */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.1, duration: 0.4 }}
-            className="flex items-center gap-2 text-gray-500 text-sm sm:text-base"
-          >
-            <Clock className="w-4 h-4" />
-            <span>Estimated completion: 2 hours</span>
-          </motion.div>
+      {/* Content Section */}
+      <div className="flex flex-col items-center justify-center text-center px-4 pt-32 pb-10 sm:pt-36 md:pt-40 relative z-10 flex-grow">
+        {/* Maintenance Icons */}
+        <div className="flex gap-6 sm:gap-10 mb-8 flex-wrap justify-center z-10">
+          <div className="bg-cyan-300 bg-opacity-25 rounded-full w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center">
+            <Image
+              src="/image/MaintenanceToolIcon.svg"
+              alt="Tool Icon"
+              width={50}
+              height={50}
+            />
+          </div>
+          <div className="bg-cyan-300 bg-opacity-25 rounded-full w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center">
+            <Image
+              src="/image/MaintenanceFrown.svg"
+              alt="Frown Icon"
+              width={50}
+              height={50}
+            />
+          </div>
+          <div className="bg-cyan-300 bg-opacity-25 rounded-full w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center">
+            <Image
+              src="/image/MaintenanceSettingsSymbol.svg"
+              alt="Settings Icon"
+              width={50}
+              height={50}
+            />
+          </div>
+        </div>
 
-          {/* Button */}
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            transition={{ duration: 0.2 }}
-            onClick={() => window.location.reload()}
-            className="mt-2 sm:mt-4 flex items-center gap-2 px-5 py-2.5 sm:px-6 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm hover:shadow-md transition-all text-sm sm:text-base"
-          >
-            <RefreshCcw className="w-4 h-4" />
-            <span>Check Status</span>
-          </motion.button>
-        </motion.div>
-      )}
-    </div>
+        {/* Title */}
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-black z-10">
+          Under Maintenance
+        </h1>
+        <p className="text-base sm:text-lg md:text-xl mt-3 text-black/80 max-w-[90%] sm:max-w-[70%] z-10">
+          Our website is under maintenance. We will be back shortly.
+        </p>
+
+        {/* Coffee Section */}
+        <div className="flex flex-col sm:flex-row items-center gap-3 mt-6 max-w-[90%] z-10">
+          <Image
+            src="/image/MaintenanceCoffee.png"
+            alt="Coffee Icon"
+            width={60}
+            height={60}
+          />
+          <p className="text-base sm:text-lg text-black/80 text-center sm:text-left">
+            Please sip a cup of coffee/tea until we are back.
+          </p>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="text-center py-4 text-sm text-gray-600">
+        © 2024 Rakshaayan. All rights reserved.
+      </footer>
+      <div className="mt-auto w-full z-10">
+       
+      </div>
+    </main>
   );
 }

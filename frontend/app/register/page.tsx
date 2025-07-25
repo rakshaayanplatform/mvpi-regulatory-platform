@@ -1,6 +1,9 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
+
 
 export default function Signup() {
   const router = useRouter();
@@ -38,25 +41,36 @@ export default function Signup() {
     }
   };
 
-  const handleVerifyOtp = async () => {
-    setOtpError("");
-    setOtpSuccess("");
+ const handleVerifyOtp = async () => {
+  setOtpError("");
+  setOtpSuccess("");
 
-    const response = await fetch("http://100.97.106.2:8001/verify-otp/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone_number, otp_code }),
-    });
+  const response = await fetch("http://100.97.106.2:8001/verify-otp/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone_number, otp_code }),
+  });
 
-    const data = await response.json();
+  const data = await response.json();
 
-    if (response.ok && data.verified) {
-      setOtpVerified(true);
-      setOtpSuccess("OTP verified successfully.");
-    } else {
-      setOtpError(data.error || data.message || "Invalid OTP.");
-    }
-  };
+  if (response.ok && data.message?.toLowerCase().includes("otp verified")) {
+    setOtpVerified(true);
+    setOtpSuccess(data.message || "OTP verified successfully.");
+  } else {
+    setOtpError(data.error || data.message || "Invalid OTP.");
+  }
+};
+
+const canRegister =
+  username.trim() !== "" &&
+  email.trim() !== "" &&
+  phone_number.trim() !== "" &&
+  user_type.trim() !== "" &&
+  otpVerified &&
+  password.trim() !== "" &&
+  termsAccepted;
+
+
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -111,16 +125,15 @@ export default function Signup() {
                 "manufacturer",
                 "government_official",
                 "coordinator",
-                "system_admin",
+                
               ].map((role, i) => {
-                const icons = ["🧑", "🏥", "🏭", "🏛", "🧑‍💼", "🛠"];
+                const icons = ["🧑", "🏥", "🏭", "🏛", "🧑‍💼"];
                 const labels = [
                   "Patient",
                   "Hospital Staff",
                   "Manufacturer",
                   "Gov. Official",
                   "Coordinator",
-                  "Sys Admin",
                 ];
                 return (
                   <button
@@ -168,21 +181,19 @@ export default function Signup() {
           ))}
 
           <div className="flex items-end gap-2 flex-wrap md:flex-nowrap">
-            <div className="relative flex-grow">
-              <label className="block relative cursor-text">
-                <input
-                  type="text"
-                  placeholder="Mobile Number"
-                  className="peer w-full border-b border-gray-400 bg-transparent py-4 placeholder-transparent focus:outline-none focus:border-blue-500"
-                  maxLength={10}
-                  value={phone_number}
-                  onChange={(e) => setPhone_number(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                />
-                <span className="absolute left-0 top-0 text-gray-500 text-sm transition-all peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-0 peer-focus:text-sm peer-focus:text-blue-600">
-                  Mobile Number
-                </span>
-              </label>
-            </div>
+           <div className="flex items-end gap-2 flex-wrap md:flex-nowrap">
+  <div className="relative flex-grow">
+    <label className="block mb-1 text-sm text-gray-500">Mobile Number</label>
+    <PhoneInput
+      country={'in'}
+      value={phone_number}
+      onChange={(phone) => setPhone_number(phone)}
+      inputClass="!bg-transparent !border-b !border-gray-400 !w-full !py-4 !focus:outline-none !focus:border-blue-500"
+      containerClass="!w-full"
+    />
+  </div>
+</div>
+
             <button
               type="button"
               onClick={handleSendOtp}
@@ -220,20 +231,32 @@ export default function Signup() {
                 </button>
               </div>
 
-              <div className="relative">
-                <label className="block relative cursor-text">
-                  <input
-                    type="password"
-                    placeholder="Password"
-                    className="peer w-full border-b border-gray-400 bg-transparent py-4 placeholder-transparent focus:outline-none focus:border-blue-500"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                  <span className="absolute left-0 top-0 text-gray-500 text-sm transition-all peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-0 peer-focus:text-sm peer-focus:text-blue-600">
-                    Password (min 6 characters)
-                  </span>
-                </label>
-              </div>
+             <div className="relative">
+  <label className="block relative cursor-text">
+    <input
+      type="password"
+      placeholder="Password"
+      className="peer w-full border-b border-gray-400 bg-transparent py-4 placeholder-transparent focus:outline-none focus:border-blue-500"
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+    />
+    <span className="absolute left-0 top-0 text-gray-500 text-sm transition-all peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-0 peer-focus:text-sm peer-focus:text-blue-600">
+      Password
+    </span>
+  </label>
+
+  {/* Validation Messages */}
+  {password && (
+    <div className="mt-2 text-sm text-red-500 space-y-1">
+      {!/^.{8,}$/.test(password) && <p>• At least 8 characters</p>}
+      {!/[A-Z]/.test(password) && <p>• At least one uppercase letter</p>}
+      {!/[a-z]/.test(password) && <p>• At least one lowercase letter</p>}
+      {!/[0-9]/.test(password) && <p>• At least one digit</p>}
+      {!/[^A-Za-z0-9]/.test(password) && <p>• At least one special character</p>}
+    </div>
+  )}
+</div>
+
             </>
           )}
 
@@ -253,14 +276,15 @@ export default function Signup() {
               </span>
             </label>
             <button
-              type="submit"
-              className={`py-2 px-6 rounded-full text-white font-semibold ${
-                termsAccepted ? "bg-lime-500 hover:bg-lime-600" : "bg-gray-300 cursor-not-allowed"
-              }`}
-              disabled={!termsAccepted}
-            >
-              Register
-            </button>
+  type="submit"
+  className={`py-2 px-6 rounded-full text-white font-semibold ${
+    canRegister ? "bg-lime-500 hover:bg-lime-600" : "bg-gray-300 cursor-not-allowed"
+  }`}
+  disabled={!canRegister}
+>
+  Register
+</button>
+
           </div>
         </form>
       </div>
