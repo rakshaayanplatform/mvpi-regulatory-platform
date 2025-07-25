@@ -122,6 +122,10 @@ dist
 
 # Gatsby files
 .cache/
+<<<<<<< HEAD
+=======
+
+>>>>>>> 21152f658b4e47b4e91caabff1236816a21f2f1a
 
 # Storybook build outputs
 .out
