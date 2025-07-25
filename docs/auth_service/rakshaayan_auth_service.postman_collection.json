@@ -1,0 +1,333 @@
+{
+  "info": {
+    "_postman_id": "rakshaayan-auth-service-collection",
+    "name": "Rakshaayan Auth Service",
+    "description": "# Rakshaayan Auth Service API Collection\n\n## How to Use\n- **Register** a user first.\n- **Send verification email** and **verify email** (required before login).\n- **Login** to receive authentication cookies (access_token, refresh_token).\n- Use authenticated endpoints (profile, update, change password, etc.) after login.\n- For admin endpoints, login as an admin user.\n- Use the provided example bodies for each request.\n- CSRF cookies are set automatically by the backend.\n\n## Special Notes\n- Email verification is required before login.\n- Registration strictly enforces uniqueness for username, email, and phone number. Duplicate registration will return a 400 error.\n- All user types and edge/negative cases are covered and tested in the backend.\n- Use `withCredentials: true` in frontend or allow cookies in Postman for authenticated requests.\n- For password reset, request a password reset OTP, then reset password.\n- Admin endpoints require an admin user.\n\n## Endpoints\n- Register, Login, Logout\n- Profile (get/update), Change Password\n- OTP (request/verify), Password Reset\n- Email Verification (send/verify)\n- User Roles, Assign Role, Audit Logs\n- Admin User Management (list/search/update/deactivate)\n\n---\n\nFor more details, see the README in the repository.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Register",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"john\",\n  \"email\": \"john@email.com\",\n  \"phone_number\": \"+919876543210\",\n  \"password\": \"StrongPass123!\",\n  \"user_type\": \"patient\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8001/register/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["register", ""]
+        }
+      },
+      "description": "Register a new user. Required fields: username, email, phone_number, password, user_type.\n\n**Note:** Registration strictly enforces uniqueness for username, email, and phone number. Attempts to register with a duplicate username, email, or phone will return a 400 error with a clear message."
+    },
+    {
+      "name": "Login (requires email verification)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"john\",\n  \"password\": \"StrongPass123!\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8001/login/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["login", ""]
+        }
+      },
+      "description": "Login with username and password. Email must be verified first. Sets authentication cookies."
+    },
+    {
+      "name": "Send Verification Email",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "http://localhost:8001/email/send-verification/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["email", "send-verification", ""]
+        }
+      },
+      "description": "Send a verification email to the currently authenticated user."
+    },
+    {
+      "name": "Verify Email",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"john@email.com\",\n  \"token\": \"<token-from-email>\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8001/email/verify/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["email", "verify", ""]
+        }
+      },
+      "description": "Verify a user's email using the token sent to their email address."
+    },
+    {
+      "name": "Request OTP (Phone)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone_number\": \"+919876543210\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8001/request-otp/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["request-otp", ""]
+        }
+      },
+      "description": "Request an OTP for phone verification."
+    },
+    {
+      "name": "Verify OTP (Phone)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone_number\": \"+919876543210\",\n  \"otp_code\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8001/verify-otp/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["verify-otp", ""]
+        }
+      },
+      "description": "Verify a phone OTP. Purpose must match the OTP's purpose (verify or password_reset)."
+    },
+    {
+      "name": "Request Password Reset OTP",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone_number\": \"+919876543210\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8001/request-password-reset-otp/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["request-password-reset-otp", ""]
+        }
+      },
+      "description": "Request an OTP for password reset."
+    },
+    {
+      "name": "Reset Password",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone_number\": \"+919876543210\",\n  \"otp_code\": \"123456\",\n  \"new_password\": \"ResetPass123!\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8001/reset-password/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["reset-password", ""]
+        }
+      },
+      "description": "Reset a user's password using a valid OTP."
+    },
+    {
+      "name": "Profile (Get)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8001/profile/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["profile", ""]
+        }
+      },
+      "description": "Get the authenticated user's profile. Requires login."
+    },
+    {
+      "name": "Profile (Update)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"organization_name\": \"Test Org\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8001/profile/update/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["profile", "update", ""]
+        }
+      },
+      "description": "Update the authenticated user's profile. Requires login."
+    },
+    {
+      "name": "Change Password",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"old_password\": \"StrongPass123!\",\n  \"new_password\": \"NewPass123!\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8001/change-password/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["change-password", ""]
+        }
+      },
+      "description": "Change the authenticated user's password. Requires login."
+    },
+    {
+      "name": "User Roles",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8001/user-roles/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["user-roles", ""]
+        }
+      },
+      "description": "Get the roles assigned to the authenticated user."
+    },
+    {
+      "name": "Assign Role",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_id\": 2,\n  \"role_id\": 1\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8001/assign-role/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["assign-role", ""]
+        }
+      },
+      "description": "Assign a role to a user. Requires admin authentication."
+    },
+    {
+      "name": "Audit Logs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8001/audit-logs/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["audit-logs", ""]
+        }
+      },
+      "description": "Get audit logs for the authenticated user."
+    },
+    {
+      "name": "Admin: List/Search Users",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8001/admin/users/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["admin", "users", ""]
+        }
+      },
+      "description": "List or search users. Requires admin authentication."
+    },
+    {
+      "name": "Admin: Update User",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_type\": \"manufacturer\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8001/admin/users/2/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["admin", "users", "2", ""]
+        }
+      },
+      "description": "Update a user's details. Requires admin authentication."
+    },
+    {
+      "name": "Admin: Deactivate User",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8001/admin/users/2/deactivate/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8001",
+          "path": ["admin", "users", "2", "deactivate", ""]
+        }
+      },
+      "description": "Deactivate a user. Requires admin authentication."
+    }
+  ]
+} 

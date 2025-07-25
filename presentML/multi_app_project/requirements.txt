@@ -1,0 +1,16 @@
+streamlit
+pillow
+pytesseract
+opencv-python
+numpy
+matplotlib
+seaborn
+scikit-learn
+pandas
+plotly
+nltk
+wordcloud
+networkx
+google-generativeai
+python-dotenv
+requests

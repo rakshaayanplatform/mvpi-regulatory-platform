@@ -1,83 +1,63 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { API_CONFIG } from '@/lib/api';
+import React, { useEffect, useState } from 'react';
 
-interface ServiceStatus {
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+const SERVICES = [
+  { service: 'Auth Service', url: `${process.env.NEXT_PUBLIC_API_AUTH_URL}` },
+  { service: 'Patient Service', url: `${BASE_URL}/patient` },
+  { service: 'Hospital Service', url: `${BASE_URL}/hospital` },
+  { service: 'Manufacturer Service', url: `${BASE_URL}/manufacturer` },
+  { service: 'Gov Service', url: `${BASE_URL}/gov` },
+  { service: 'Media Service', url: `${BASE_URL}/media` },
+  { service: 'Coordinator Service', url: `${BASE_URL}/coordinator` },
+  { service: 'AI Service', url: `${BASE_URL}/ai` },
+];
+
+type ServiceStatus = {
   service: string;
   url: string;
-  status: 'online' | 'offline' | 'checking';
-}
+  status: 'checking' | 'online' | 'offline';
+};
 
 export default function ServiceStatus() {
-  const [services, setServices] = useState<ServiceStatus[]>([
-    { service: 'Auth Service', url: API_CONFIG.AUTH_API_URL, status: 'checking' },
-    { service: 'Patient Service', url: API_CONFIG.PATIENT_API_URL, status: 'checking' },
-    { service: 'Hospital Service', url: API_CONFIG.HOSPITAL_API_URL, status: 'checking' },
-    { service: 'Manufacturer Service', url: API_CONFIG.MANUFACTURER_API_URL, status: 'checking' },
-    { service: 'Government Service', url: API_CONFIG.GOV_API_URL, status: 'checking' },
-    { service: 'Coordinator Service', url: API_CONFIG.COORDINATOR_API_URL, status: 'checking' },
-    { service: 'Media Service', url: API_CONFIG.MEDIA_API_URL, status: 'checking' },
-    { service: 'AI Service', url: API_CONFIG.AI_API_URL, status: 'checking' },
-  ]);
+  const [services, setServices] = useState<ServiceStatus[]>(
+    SERVICES.map(s => ({ ...s, status: 'checking' }))
+  );
 
   useEffect(() => {
     const checkServices = async () => {
-      const updatedServices = await Promise.all(
-        services.map(async (service) => {
+      const results = await Promise.all(
+        services.map(async (svc) => {
           try {
-            const response = await fetch(`${service.url}/health/`, {
-              method: 'GET',
-              headers: { 'Content-Type': 'application/json' },
-            });
-            return {
-              ...service,
-              status: (response.ok ? 'online' : 'offline') as ServiceStatus['status'],
-            };
+            const res = await fetch(svc.url + '/health', { method: 'GET' });
+            if (res.ok) return { ...svc, status: 'online' };
+            return { ...svc, status: 'offline' };
           } catch {
-            return {
-              ...service,
-              status: 'offline' as ServiceStatus['status'],
-            };
+            return { ...svc, status: 'offline' };
           }
         })
       );
-      setServices(updatedServices);
+      setServices(results as ServiceStatus[]);
     };
-
     checkServices();
-  }, [services]);
+    // Optionally poll every 30s
+    const interval = setInterval(checkServices, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-4">Service Status</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {services.map((service) => (
-          <div
-            key={service.service}
-            className="p-4 border rounded-lg flex items-center justify-between"
-          >
-            <div>
-              <h3 className="font-semibold">{service.service}</h3>
-              <p className="text-sm text-gray-600">{service.url}</p>
-            </div>
-            <div className="flex items-center">
-              <div
-                className={`w-3 h-3 rounded-full mr-2 ${
-                  service.status === 'online'
-                    ? 'bg-green-500'
-                    : service.status === 'offline'
-                    ? 'bg-red-500'
-                    : 'bg-yellow-500'
-                }`}
-              />
-              <span className="text-sm font-medium capitalize">
-                {service.status}
-              </span>
-            </div>
-          </div>
+    <div>
+      <h2>Service Status</h2>
+      <ul>
+        {services.map((svc) => (
+          <li key={svc.service}>
+            <strong>{svc.service}:</strong> {svc.status === 'checking' ? 'Checking...' : svc.status === 'online' ? '🟢 Online' : '🔴 Offline'}
+            <span style={{ marginLeft: 8, fontSize: 12, color: '#888' }}>{svc.url}</span>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 } 
