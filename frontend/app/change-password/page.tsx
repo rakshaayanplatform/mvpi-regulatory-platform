@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import api from "@/utils/axiosInstance";
 
 export default function ChangePasswordPage() {
   const router = useRouter();
@@ -11,6 +12,8 @@ export default function ChangePasswordPage() {
     old_password: "",
     new_password: "",
   });
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -25,23 +28,14 @@ export default function ChangePasswordPage() {
     setSuccess("");
 
     try {
-      const response = await axios.post(
-        "http://100.97.106.2:8001/change-password/",
-        form,
-        {
-          headers: {
-            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo3LCJleHAiOjE3NTMzMzI4NjUsImlhdCI6MTc1MzMzMTk2NX0.8Jf-S5fN38XHEVGGkcSiv2urbrzY3DKU4uLf5SidilA`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await api.post("change-password/", form);
 
       console.log("✅ Password changed:", response.data);
       setSuccess("Password changed successfully!");
 
       setTimeout(() => {
-        router.push("/profile");
-      }, 2000);
+        router.push("/dashboard");
+      }, 1500);
     } catch (err: any) {
       console.error("❌ Password change failed:", err);
 
@@ -63,47 +57,86 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
+    <div className="min-h-screen flex flex-col justify-between bg-[#CFFAFE] px-4">
+      <div className="flex flex-1 items-center justify-center">
       <form
         onSubmit={handleSubmit}
-        className="bg-white shadow-md rounded-lg p-6 w-full max-w-md"
+          className="max-w-xl w-full mx-auto bg-blue-50 border-2 border-blue-200 shadow-lg rounded-xl p-6 md:p-8 space-y-6 animate-fade-in"
       >
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">Change Password</h2>
+          <h2 className="text-2xl font-bold text-blue-900 mb-2 text-center">Change Password</h2>
 
-        {success && <p className="text-green-600 mb-2">{success}</p>}
-        {error && <p className="text-red-600 mb-2">{error}</p>}
+          {success && <p className="text-green-600 mb-2 text-center animate-fade-in">{success}</p>}
+          {error && <p className="text-red-600 mb-2 text-center animate-fade-in">{error}</p>}
 
-        <label className="block mb-4">
-          Old Password:
+          <div className="space-y-4">
+            <div className="relative">
           <input
-            type="password"
+                type={showOldPassword ? "text" : "password"}
             name="old_password"
             value={form.old_password}
             onChange={handleChange}
-            className="w-full mt-1 p-2 border rounded"
+                className="peer w-full border-b border-gray-400 bg-transparent py-4 pr-10 placeholder-transparent focus:outline-none focus:border-blue-500 transition-all duration-200"
+                placeholder="Old Password"
             required
           />
-        </label>
+              <span className="absolute left-0 top-0 text-gray-500 text-sm transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-0 peer-focus:text-sm peer-focus:text-blue-600 pointer-events-none">
+                Old Password
+              </span>
+              <button
+                type="button"
+                tabIndex={-1}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600 focus:outline-none"
+                onClick={() => setShowOldPassword((v) => !v)}
+                aria-label={showOldPassword ? "Hide password" : "Show password"}
+              >
+                {showOldPassword ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.657.336-3.236.938-4.675m1.675-2.675A9.956 9.956 0 0112 3c5.523 0 10 4.477 10 10 0 1.657-.336 3.236-.938 4.675m-1.675 2.675A9.956 9.956 0 0112 21c-1.657 0-3.236-.336-4.675-.938m-2.675-1.675A9.956 9.956 0 013 12c0-1.657.336-3.236.938-4.675m1.675-2.675A9.956 9.956 0 0112 3c1.657 0 3.236.336 4.675.938m2.675 1.675A9.956 9.956 0 0121 12c0 1.657-.336 3.236-.938 4.675m-1.675 2.675A9.956 9.956 0 0112 21z" /></svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.274.832-.64 1.624-1.09 2.357M15.54 15.54A9.956 9.956 0 0112 19c-5.523 0-10-4.477-10-10 0-1.657.336-3.236.938-4.675m1.675-2.675A9.956 9.956 0 0112 3c5.523 0 10 4.477 10 10 0 1.657-.336 3.236-.938 4.675m-1.675 2.675A9.956 9.956 0 0112 21c-1.657 0-3.236-.336-4.675-.938m-2.675-1.675A9.956 9.956 0 013 12z" /></svg>
+                )}
+              </button>
+            </div>
 
-        <label className="block mb-4">
-          New Password:
+            <div className="relative">
           <input
-            type="password"
+                type={showNewPassword ? "text" : "password"}
             name="new_password"
             value={form.new_password}
             onChange={handleChange}
-            className="w-full mt-1 p-2 border rounded"
+                className="peer w-full border-b border-gray-400 bg-transparent py-4 pr-10 placeholder-transparent focus:outline-none focus:border-blue-500 transition-all duration-200"
+                placeholder="New Password"
             required
           />
-        </label>
+              <span className="absolute left-0 top-0 text-gray-500 text-sm transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-0 peer-focus:text-sm peer-focus:text-blue-600 pointer-events-none">
+                New Password
+              </span>
+              <button
+                type="button"
+                tabIndex={-1}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600 focus:outline-none"
+                onClick={() => setShowNewPassword((v) => !v)}
+                aria-label={showNewPassword ? "Hide password" : "Show password"}
+              >
+                {showNewPassword ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.657.336-3.236.938-4.675m1.675-2.675A9.956 9.956 0 0112 3c5.523 0 10 4.477 10 10 0 1.657-.336 3.236-.938 4.675m-1.675 2.675A9.956 9.956 0 0112 21c-1.657 0-3.236-.336-4.675-.938m-2.675-1.675A9.956 9.956 0 013 12c0-1.657.336-3.236.938-4.675m1.675-2.675A9.956 9.956 0 0112 3c1.657 0 3.236.336 4.675.938m2.675 1.675A9.956 9.956 0 0121 12c0 1.657-.336 3.236-.938 4.675m-1.675 2.675A9.956 9.956 0 0112 21c-1.657 0-3.236-.336-4.675-.938m-2.675-1.675A9.956 9.956 0 013 12z" /></svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.274.832-.64 1.624-1.09 2.357M15.54 15.54A9.956 9.956 0 0112 19c-5.523 0-10-4.477-10-10 0-1.657.336-3.236.938-4.675m1.675-2.675A9.956 9.956 0 0112 3c5.523 0 10 4.477 10 10 0 1.657-.336 3.236-.938 4.675m-1.675 2.675A9.956 9.956 0 0112 21c-1.657 0-3.236-.336-4.675-.938m-2.675-1.675A9.956 9.956 0 013 12z" /></svg>
+                )}
+              </button>
+            </div>
+          </div>
 
         <button
           type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded w-full"
+            className="w-full bg-[#8ED100] hover:bg-lime-600 text-black font-bold py-2 rounded-full mt-4 transition-all duration-200 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-lime-400"
         >
           Change Password
         </button>
       </form>
+      </div>
+      <footer className="text-center py-4 text-sm text-gray-600">
+        © 2024 Rakshaayan. All rights reserved.
+      </footer>
     </div>
   );
 }

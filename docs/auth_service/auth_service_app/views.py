@@ -110,20 +110,21 @@ def admin_deactivate_user(request, user_id):
 @permission_classes([IsAuthenticated])
 def send_verification_email(request):
     user = request.user
-    if user.is_email_verified:
-        return Response({"message": "Email already verified."}, status=200)
+    # if user.is_email_verified:
+    #     return Response({"message": "Email already verified."}, status=200)
     token = secrets.token_urlsafe(32)
     user.email_verification_token = token
     user.save()
-    verification_link = f"http://localhost:8000/email/verify/?email={user.email}&token={token}"
-    send_mail(
-        "Verify your email",
-        f"Click the link to verify your email: {verification_link}",
-        settings.EMAIL_HOST_USER,
-        [user.email],
-        fail_silently=False,
-    )
-    return Response({"message": "Verification email sent."})
+    verification_link = f"http://localhost:8001/email/verify/?email={user.email}&token={token}"
+    print(f"[DEV] Email verification link for {user.email}: {verification_link}")
+    # send_mail(
+    #     "Verify your email",
+    #     f"Click the link to verify your email: {verification_link}",
+    #     settings.EMAIL_HOST_USER,
+    #     [user.email],
+    #     fail_silently=False,
+    # )
+    return Response({"message": "Verification email sent (see backend console for link)."})
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -146,8 +147,6 @@ def login_view(request):
     serializer = UserLoginSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.validated_data["user"]
-        if not user.is_email_verified:
-            return Response({"error": "Email not verified."}, status=403)
         login(request, user)
         access_token = generate_access_token(user)
         refresh_token = generate_refresh_token(user)
@@ -162,7 +161,7 @@ def login_view(request):
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=True,
+            secure=False,  # Set to False for local development
             samesite="Lax",
             max_age=15 * 60,
         )
@@ -170,7 +169,7 @@ def login_view(request):
             key="refresh_token",
             value=refresh_token,
             httponly=True,
-            secure=True,
+            secure=False,  # Set to False for local development
             samesite="Lax",
             max_age=7 * 24 * 60 * 60,
         )
@@ -179,7 +178,7 @@ def login_view(request):
             key="X-CSRFToken",
             value=request.META.get("CSRF_COOKIE", secrets.token_urlsafe(16)),
             httponly=False,
-            secure=True,
+            secure=False,  # Set to False for local development
             samesite="Lax",
         )
         return response

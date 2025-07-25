@@ -4,38 +4,33 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import api from "@/utils/axiosInstance";
 
 export default function DashboardPage() {
   const [role, setRole] = useState<string | null>(null);
   const router = useRouter();
+  const [userType, setUserType] = useState<string | null>(null);
 
   useEffect(() => {
-    // ✅ Changed from "userRole" to "user_type" to match signup
     const storedRole = localStorage.getItem("user_type");
     if (storedRole) {
       setRole(storedRole);
+      setUserType(storedRole);
+    }
+    // Clear the justRegistered flag if it exists
+    if (localStorage.getItem("justRegistered") === "true") {
+      localStorage.removeItem("justRegistered");
     }
   }, []);
 
   const handleLogout = async () => {
     try {
-      await axios.post(
-        "http://100.97.106.2:8001/logout/",
-        {},
-        {
-          headers: {
-            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyMiwiZXhwIjoxNzUzMzUzMTM1LCJpYXQiOjE3NTMzNTIyMzV9.c6TR5VSSJReCNXrWlwxlruBMw3iIAg6PBE7EalxZ2ig`,
-          },
-        }
-      );
-
-      // ✅ Also remove "user_type" on logout
+      await api.post("logout/", {});
       localStorage.removeItem("user_type");
       localStorage.removeItem("userRole");
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
-
-      router.push("/login");
+      router.push("/");
     } catch (err) {
       console.error("Logout failed:", err);
       alert("Logout failed. Try again.");
@@ -131,7 +126,12 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
       <div className="bg-white shadow-md rounded-lg p-6 w-full max-w-md text-center">
-        {role ? renderDashboardContent() : <p className="text-gray-500">Loading...</p>}
+        {role ? (
+          <>
+            <div className="mb-2 text-gray-700 text-sm font-semibold">User Type: <span className="text-blue-700">{userType}</span></div>
+            {renderDashboardContent()}
+          </>
+        ) : <p className="text-gray-500">Loading...</p>}
 
         {role && (
           <div className="flex flex-col gap-4 mt-6">
@@ -143,21 +143,13 @@ export default function DashboardPage() {
               View Profile
             </Link>
 
-            {/* Update Profile Button */}
-            <Link
-              href="/profile/update"
-              className="bg-yellow-600 hover:bg-yellow-700 text-white py-2 rounded"
-            >
-              Update Profile
-            </Link>
-
             {/* Change Password Button */}
-            <Link
-              href="/change-password"
+            <button
+              onClick={() => router.push("/change-password")}
               className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded"
             >
               Change Password
-            </Link>
+            </button>
 
             {/* Logout Button */}
             <button

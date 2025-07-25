@@ -55,7 +55,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "auth_service_app.urls"
+ROOT_URLCONF = "auth_service.urls"
 
 TEMPLATES = [
     {
@@ -156,7 +156,11 @@ REST_FRAMEWORK = {
 AUTH_USER_MODEL = 'auth_service_app.User'
 
 # CORS settings
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
 CORS_ALLOW_CREDENTIALS = True
 
 # JWT settings

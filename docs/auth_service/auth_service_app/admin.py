@@ -13,41 +13,50 @@ except admin.sites.NotRegistered:
 
 @admin.register(User)
 class UserAdmin(DefaultUserAdmin):
-    list_display = ("id", "username", "email", "phone_number", "user_type", "is_phone_verified", "created_at")
+    list_display = ("id", "username", "email", "phone_number", "user_type", "is_phone_verified", "is_email_verified", "created_at")
     search_fields = ("username", "email", "phone_number")
-    list_filter = ("user_type", "is_phone_verified")
+    list_filter = ("user_type", "is_phone_verified", "is_email_verified")
 
     fieldsets = DefaultUserAdmin.fieldsets + (
         ("Additional Info", {
             "fields": (
-                "phone_number", "user_type", "is_phone_verified",
-                "organization_name", "designation", "address"
+                "phone_number", "user_type", "is_phone_verified", "is_email_verified", "email_verification_token",
+                "organization_name", "designation", "address", "created_at", "updated_at"
             )
         }),
     )
+    readonly_fields = ("created_at", "updated_at")
 
 
 @admin.register(Role)
 class RoleAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "description", "created_at")
+    list_display = ("id", "name", "description", "permissions", "created_at")
     search_fields = ("name",)
+    def get_fields(self, request, obj=None):
+        return [field.name for field in self.model._meta.get_fields()]
 
 
 @admin.register(UserRole)
 class UserRoleAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "role", "assigned_by", "assigned_at")
     search_fields = ("user__username", "role__name")
+    def get_fields(self, request, obj=None):
+        return [field.name for field in self.model._meta.get_fields()]
 
 
 @admin.register(OTP)
 class OTPAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "phone_number", "otp_code", "is_used", "created_at", "expires_at")
+    list_display = ("id", "user", "phone_number", "otp_code", "purpose", "is_used", "created_at", "expires_at")
     search_fields = ("user__username", "phone_number", "otp_code")
-    list_filter = ("is_used",)
+    list_filter = ("is_used", "purpose")
+    def get_fields(self, request, obj=None):
+        return [field.name for field in self.model._meta.get_fields()]
 
 
 @admin.register(AuditLog)
 class AuditLogAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "action", "resource_type", "resource_id", "ip_address", "created_at")
+    list_display = ("id", "user", "action", "resource_type", "resource_id", "ip_address", "user_agent", "details", "created_at")
     search_fields = ("user__username", "action", "resource_type", "resource_id")
     list_filter = ("action",)
+    def get_fields(self, request, obj=None):
+        return [field.name for field in self.model._meta.get_fields()]
