@@ -17,6 +17,7 @@ export default function ChangePasswordPage() {
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -26,19 +27,16 @@ export default function ChangePasswordPage() {
     e.preventDefault();
     setError("");
     setSuccess("");
-
+    setLoading(true);
     try {
       const response = await api.post("change-password/", form);
 
       console.log("✅ Password changed:", response.data);
       setSuccess("Password changed successfully!");
-
       setTimeout(() => {
         router.push("/dashboard");
       }, 1500);
     } catch (err: any) {
-      console.error("❌ Password change failed:", err);
-
       if (err.response) {
         const data = err.response.data;
         if (data.detail) {
@@ -53,6 +51,8 @@ export default function ChangePasswordPage() {
       } else {
         setError("No response from server. Check your network or token.");
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -78,6 +78,7 @@ export default function ChangePasswordPage() {
                 className="peer w-full border-b border-gray-400 bg-transparent py-4 pr-10 placeholder-transparent focus:outline-none focus:border-blue-500 transition-all duration-200"
                 placeholder="Old Password"
             required
+            disabled={loading}
           />
               <span className="absolute left-0 top-0 text-gray-500 text-sm transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-0 peer-focus:text-sm peer-focus:text-blue-600 pointer-events-none">
                 Old Password
@@ -106,6 +107,7 @@ export default function ChangePasswordPage() {
                 className="peer w-full border-b border-gray-400 bg-transparent py-4 pr-10 placeholder-transparent focus:outline-none focus:border-blue-500 transition-all duration-200"
                 placeholder="New Password"
             required
+            disabled={loading}
           />
               <span className="absolute left-0 top-0 text-gray-500 text-sm transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:top-0 peer-focus:text-sm peer-focus:text-blue-600 pointer-events-none">
                 New Password

@@ -11,6 +11,7 @@ export default function Signup() {
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
+  const [countryCode, setCountryCode] = useState(COUNTRY_CODES[0].code);
   const [phone_number, setPhone_number] = useState("");
   const [user_type, setUser_type] = useState("");
   const [otp_code, setOtp_code] = useState("");
@@ -22,6 +23,8 @@ export default function Signup() {
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpSuccess, setOtpSuccess] = useState("");
   const [otpError, setOtpError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [formErrors, setFormErrors] = useState<any>(null);
 
   const handleSendOtp = async () => {
     setOtpError("");
@@ -34,8 +37,8 @@ export default function Signup() {
     if (response.status === 200) {
       setOtpSent(true);
       setOtpSuccess("OTP sent successfully to your mobile.");
-    } else {
-      setOtpError(data.error || data.message || "Failed to send OTP.");
+    } catch (error: any) {
+      setOtpError(error?.response?.data?.error || error?.response?.data?.message || "Failed to send OTP.");
     }
   };
 
@@ -68,7 +71,7 @@ const canRegister =
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-
+    setFormErrors(null);
     if (!otp_code) {
       setOtpError("Please verify OTP before submitting.");
       return;
@@ -148,13 +151,14 @@ const canRegister =
                 "government_official",
                 "coordinator",
               ].map((role, i) => {
-                const icons = ["🧑", "🏥", "🏭", "🏛", "🧑‍💼"];
+                const icons = ["🧑", "🏥", "🏭", "🏛", "🧑‍💼", "🛠"];
                 const labels = [
                   "Patient",
                   "Hospital Staff",
                   "Manufacturer",
                   "Gov. Official",
                   "Coordinator",
+                  "Sys Admin",
                 ];
                 return (
                   <button
@@ -205,19 +209,14 @@ const canRegister =
           ))}
 
           <div className="flex items-end gap-2 flex-wrap md:flex-nowrap">
-           <div className="flex items-end gap-2 flex-wrap md:flex-nowrap">
-  <div className="relative flex-grow">
-    <label className="block mb-1 text-sm text-gray-500">Mobile Number</label>
-    <PhoneInput
-      country={'in'}
-      value={phone_number}
-      onChange={(phone) => setPhone_number(phone)}
-      inputClass="!bg-transparent !border-b !border-gray-400 !w-full !py-4 !focus:outline-none !focus:border-blue-500"
-      containerClass="!w-full"
-    />
-  </div>
-</div>
-
+            <div className="relative flex-grow">
+              <label className="block relative cursor-text">
+                <select value={countryCode} onChange={e => setCountryCode(e.target.value)} className="border-b border-gray-400 bg-transparent py-4 focus:outline-none focus:border-blue-500">
+                  {COUNTRY_CODES.map(opt => <option key={opt.code} value={opt.code}>{opt.label}</option>)}
+                </select>
+                <input type="text" placeholder="Mobile Number" maxLength={10} value={phone_number} onChange={e => setPhone_number(e.target.value.replace(/\D/g, "").slice(0, 10))} className="peer w-full border-b border-gray-400 bg-transparent py-4 placeholder-transparent focus:outline-none focus:border-blue-500" />
+              </label>
+            </div>
             <button
               type="button"
               onClick={handleSendOtp}
@@ -299,6 +298,15 @@ const canRegister =
 
           {otpError && <p className="text-red-500 text-sm mb-1">{otpError}</p>}
           {otpSuccess && <p className="text-green-600 text-sm mb-1">{otpSuccess}</p>}
+          {formErrors && (
+            <div className="text-red-600 text-sm mb-2">
+              {typeof formErrors === "string"
+                ? formErrors
+                : Object.entries(formErrors).map(([field, msg]) => (
+                    <div key={field}>{field}: {Array.isArray(msg) ? msg.join(", ") : String(msg)}</div>
+                  ))}
+            </div>
+          )}
 
           <div className="flex justify-between items-center">
             <label className="flex gap-2 text-sm">
@@ -313,15 +321,14 @@ const canRegister =
               </span>
             </label>
             <button
-  type="submit"
-  className={`py-2 px-6 rounded-full text-white font-semibold ${
-    canRegister ? "bg-lime-500 hover:bg-lime-600" : "bg-gray-300 cursor-not-allowed"
-  }`}
-  disabled={!canRegister}
->
-  Register
-</button>
-
+              type="submit"
+              className={`py-2 px-6 rounded-full text-white font-semibold ${
+                termsAccepted ? "bg-lime-500 hover:bg-lime-600" : "bg-gray-300 cursor-not-allowed"
+              }`}
+              disabled={!termsAccepted}
+            >
+              Register
+            </button>
           </div>
         </form>
       </div>

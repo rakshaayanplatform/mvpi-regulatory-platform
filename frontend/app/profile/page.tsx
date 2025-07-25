@@ -2,13 +2,13 @@
 import { useEffect, useState } from "react";
 import api from "@/utils/axiosInstance";
 import { useRouter } from "next/navigation";
+import api from "@/utils/axiosInstance";
+import { useRouter } from "next/navigation";
 
-// ✅ Type-safe profile interface
 interface Profile {
   [key: string]: any;
 }
 
-// ✅ User type map (flexible and avoids TS7053 error)
 const typeMap: Record<string, string> = {
   manufacturer: "Manufacturer",
   coordinator: "MDMC Coordinator",
@@ -16,12 +16,14 @@ const typeMap: Record<string, string> = {
   hospital: "Hospital Admin",
   patient: "Patient",
   government: "Government Official",
+  admin: "System Administrator",
 };
 
 export default function ViewProfilePage() {
   const [profile, setProfile] = useState<Profile>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const router = useRouter();
   const router = useRouter();
 
   useEffect(() => {
@@ -30,12 +32,11 @@ export default function ViewProfilePage() {
         const res = await api.get("profile/");
         setProfile(res.data);
         setLoading(false);
-      } catch (err) {
-        setError("Failed to load profile");
+      } catch (err: any) {
+        setError(err?.response?.data?.detail || "Failed to load profile");
         setLoading(false);
       }
     }
-
     fetchProfile();
   }, []);
 

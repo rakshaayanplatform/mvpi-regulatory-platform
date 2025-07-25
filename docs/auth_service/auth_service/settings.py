@@ -56,6 +56,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "auth_service.urls"
+ROOT_URLCONF = "auth_service.urls"
 
 TEMPLATES = [
     {

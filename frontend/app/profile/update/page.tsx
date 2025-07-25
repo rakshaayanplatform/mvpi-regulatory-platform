@@ -10,6 +10,8 @@ export default function ProfileUpdatePage() {
 
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const router = useRouter();
   const [validationErrors, setValidationErrors] = useState<any>({});
   const [showEmailVerifyPopup, setShowEmailVerifyPopup] = useState(false);
@@ -111,15 +113,17 @@ export default function ProfileUpdatePage() {
     return valid;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     if (!isFormValid()) return;
     try {
       await api.put("profile/update/", form);
       setSuccess("Profile updated successfully.");
       setTimeout(() => router.push("/profile"), 1500);
-    } catch (err) {
-      setError("Update failed. Please try again.");
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "Update failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 

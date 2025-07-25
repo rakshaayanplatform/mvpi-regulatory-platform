@@ -3,11 +3,13 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/utils/axiosInstance";
+import api from "@/utils/axiosInstance";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
@@ -44,7 +46,7 @@ export default function LoginPage() {
         }
         router.push("/dashboard");
       } else {
-        setError(data.detail || "Invalid username or password.");
+        setError("Invalid username or password.");
       }
     } catch (err: any) {
       if (err.response && err.response.status === 403) {

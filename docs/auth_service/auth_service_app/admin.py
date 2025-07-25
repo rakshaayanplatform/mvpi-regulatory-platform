@@ -14,7 +14,9 @@ except admin.sites.NotRegistered:
 @admin.register(User)
 class UserAdmin(DefaultUserAdmin):
     list_display = ("id", "username", "email", "phone_number", "user_type", "is_phone_verified", "is_email_verified", "created_at")
+    list_display = ("id", "username", "email", "phone_number", "user_type", "is_phone_verified", "is_email_verified", "created_at")
     search_fields = ("username", "email", "phone_number")
+    list_filter = ("user_type", "is_phone_verified", "is_email_verified")
     list_filter = ("user_type", "is_phone_verified", "is_email_verified")
 
     fieldsets = DefaultUserAdmin.fieldsets + (

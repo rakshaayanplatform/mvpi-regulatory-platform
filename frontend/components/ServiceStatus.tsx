@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const SERVICES = [
-  { service: 'Auth Service', url: `${BASE_URL}/auth` },
+  { service: 'Auth Service', url: `${process.env.NEXT_PUBLIC_API_AUTH_URL}` },
   { service: 'Patient Service', url: `${BASE_URL}/patient` },
   { service: 'Hospital Service', url: `${BASE_URL}/hospital` },
   { service: 'Manufacturer Service', url: `${BASE_URL}/manufacturer` },
