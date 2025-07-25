@@ -1,15 +1,15 @@
 "use client";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { removeAccessToken } from "@/utils/token";
 
 export default function LogoutPage() {
   const router = useRouter();
+
   useEffect(() => {
-    // Clear dummy session (for integration, clear auth tokens here)
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("userRole");
-    }
+    removeAccessToken();
     router.replace("/login");
   }, [router]);
+
   return <div>Logging out...</div>;
-} 
+}
