@@ -111,8 +111,8 @@ export default function DashboardPage() {
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
               Welcome System Administrator!
             </h2>
-            <Link href="/admin/users" className="btn">
-              User Management
+            <Link href="/admin/login" className="btn">
+              Admin Access
             </Link>
           </>
         );

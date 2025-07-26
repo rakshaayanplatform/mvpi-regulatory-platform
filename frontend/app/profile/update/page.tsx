@@ -67,7 +67,7 @@ export default function ProfileUpdatePage() {
       target instanceof HTMLInputElement && target.type === "checkbox"
         ? target.checked
         : target.value;
-    setForm((prevForm) => ({
+    setForm((prevForm: any) => ({
       ...prevForm,
       [name]: value,
     }));

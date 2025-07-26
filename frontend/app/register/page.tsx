@@ -11,7 +11,7 @@ export default function Signup() {
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
-  const [countryCode, setCountryCode] = useState(COUNTRY_CODES[0].code);
+  const [countryCode, setCountryCode] = useState("+91");
   const [phone_number, setPhone_number] = useState("");
   const [user_type, setUser_type] = useState("");
   const [otp_code, setOtp_code] = useState("");
@@ -23,20 +23,21 @@ export default function Signup() {
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpSuccess, setOtpSuccess] = useState("");
   const [otpError, setOtpError] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState<any>(null);
 
   const handleSendOtp = async () => {
     setOtpError("");
     setOtpSuccess("");
 
-    const response = await api.post("request-otp/", { phone_number });
+    try {
+      const response = await api.post("request-otp/", { phone_number });
 
-    const data = response.data;
+      const data = response.data;
 
-    if (response.status === 200) {
-      setOtpSent(true);
-      setOtpSuccess("OTP sent successfully to your mobile.");
+      if (response.status === 200) {
+        setOtpSent(true);
+        setOtpSuccess("OTP sent successfully to your mobile.");
+      }
     } catch (error: any) {
       setOtpError(error?.response?.data?.error || error?.response?.data?.message || "Failed to send OTP.");
     }
@@ -212,7 +213,11 @@ const canRegister =
             <div className="relative flex-grow">
               <label className="block relative cursor-text">
                 <select value={countryCode} onChange={e => setCountryCode(e.target.value)} className="border-b border-gray-400 bg-transparent py-4 focus:outline-none focus:border-blue-500">
-                  {COUNTRY_CODES.map(opt => <option key={opt.code} value={opt.code}>{opt.label}</option>)}
+                  <option value="+91">🇮🇳 India (+91)</option>
+                  <option value="+1">🇺🇸 USA (+1)</option>
+                  <option value="+44">🇬🇧 UK (+44)</option>
+                  <option value="+61">🇦🇺 Australia (+61)</option>
+                  <option value="+86">🇨🇳 China (+86)</option>
                 </select>
                 <input type="text" placeholder="Mobile Number" maxLength={10} value={phone_number} onChange={e => setPhone_number(e.target.value.replace(/\D/g, "").slice(0, 10))} className="peer w-full border-b border-gray-400 bg-transparent py-4 placeholder-transparent focus:outline-none focus:border-blue-500" />
               </label>
